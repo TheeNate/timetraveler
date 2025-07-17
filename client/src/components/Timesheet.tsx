@@ -191,22 +191,217 @@ export default function Timesheet() {
     const dateStr = now.toISOString().slice(0, 10);
     const timeStr = now.toTimeString().slice(0, 5).replace(':', '');
     const jobNum = timesheetData.jobNumber || 'NoJob';
-    const filename = `Timesheet_${jobNum}_${dateStr}_${timeStr}.json`;
+    const filename = `Timesheet_${jobNum}_${dateStr}_${timeStr}.html`;
 
-    const data = {
-      technicians,
-      jobDetails,
-      travelHours,
-      timesheetData,
-      totals: {
-        totalRegularHours,
-        totalTravelHours,
-        grandTotalHours,
-        totalTechnicians
-      }
-    };
+    // Create a complete HTML document with inline styles
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corda Vertical Traveler Timesheet - ${timesheetData.jobNumber || 'Job'} - ${timesheetData.date}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #2c5aa0, #1e4080); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 2rem; margin-bottom: 10px; }
+        .header-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
+        .info-card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; }
+        .info-card label { font-weight: 600; display: block; margin-bottom: 5px; }
+        .info-value { background: white; color: black; padding: 8px; border-radius: 4px; }
+        .content { padding: 30px; }
+        .section { margin-bottom: 40px; background: #f8fafc; padding: 25px; border-radius: 10px; border-left: 4px solid #2c5aa0; }
+        .section-title { font-size: 1.3rem; color: #2c5aa0; margin-bottom: 20px; font-weight: 600; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .form-group label { font-weight: 600; color: #374151; margin-bottom: 8px; display: block; }
+        .form-value { background: white; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; min-height: 44px; }
+        .time-grid { display: grid; grid-template-columns: 200px repeat(7, 1fr) auto; gap: 10px; align-items: center; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .time-header { font-weight: 600; color: #374151; text-align: center; padding: 10px; background: #f3f4f6; border-radius: 6px; }
+        .tech-name { font-weight: 600; color: #2c5aa0; padding: 10px; background: #f0f4f8; border-radius: 6px; }
+        .time-cell { text-align: center; padding: 8px; background: #f9fafb; border-radius: 6px; }
+        .total-cell { font-weight: 600; color: #059669; text-align: center; padding: 8px; background: #ecfdf5; border-radius: 6px; }
+        .travel-section { background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .travel-header { font-weight: 600; color: #92400e; margin-bottom: 15px; }
+        .job-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        .job-table th, .job-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        .job-table th { background: #f9fafb; font-weight: 600; color: #374151; }
+        .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 30px; }
+        .summary-card { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 20px; border-radius: 10px; text-align: center; }
+        .summary-card h3 { font-size: 2rem; margin-bottom: 5px; }
+        .signature-section { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; margin-top: 30px; padding-top: 30px; border-top: 2px solid #e5e7eb; }
+        .signature-box { text-align: center; padding: 20px; border: 2px dashed #d1d5db; border-radius: 8px; background: #fafafa; min-height: 100px; }
+        @media print { body { background: white !important; padding: 10px !important; } .container { box-shadow: none !important; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CORDA VERTICAL TRAVELER</h1>
+            <div class="header-info">
+                <div class="info-card">
+                    <label>Date:</label>
+                    <div class="info-value">${timesheetData.date}</div>
+                </div>
+                <div class="info-card">
+                    <label>Job Number:</label>
+                    <div class="info-value">${timesheetData.jobNumber}</div>
+                </div>
+                <div class="info-card">
+                    <label>WO Number:</label>
+                    <div class="info-value">${timesheetData.woNumber}</div>
+                </div>
+                <div class="info-card">
+                    <label>CO Number:</label>
+                    <div class="info-value">${timesheetData.coNumber}</div>
+                </div>
+            </div>
+        </div>
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        <div class="content">
+            <div class="section">
+                <div class="section-title">Client & Location Information</div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Client:</label>
+                        <div class="form-value">${timesheetData.client}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Billing Address:</label>
+                        <div class="form-value">${timesheetData.billingAddress.replace(/\n/g, '<br>')}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Location:</label>
+                        <div class="form-value">${timesheetData.location.replace(/\n/g, '<br>')}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact:</label>
+                        <div class="form-value">${timesheetData.contact}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Phone:</label>
+                        <div class="form-value">${timesheetData.contactPhone}</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Job Description:</label>
+                        <div class="form-value">${timesheetData.jobDescription}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Time Tracking</div>
+                
+                <div class="time-grid">
+                    <div class="time-header">Technician</div>
+                    <div class="time-header">Mon</div>
+                    <div class="time-header">Tue</div>
+                    <div class="time-header">Wed</div>
+                    <div class="time-header">Thu</div>
+                    <div class="time-header">Fri</div>
+                    <div class="time-header">Sat</div>
+                    <div class="time-header">Sun</div>
+                    <div class="time-header">Total</div>
+                </div>
+
+                ${technicians.map(tech => `
+                <div class="time-grid">
+                    <div class="tech-name">${tech.name || 'Unnamed Technician'}</div>
+                    <div class="time-cell">${tech.hours.mon || '0'}</div>
+                    <div class="time-cell">${tech.hours.tue || '0'}</div>
+                    <div class="time-cell">${tech.hours.wed || '0'}</div>
+                    <div class="time-cell">${tech.hours.thu || '0'}</div>
+                    <div class="time-cell">${tech.hours.fri || '0'}</div>
+                    <div class="time-cell">${tech.hours.sat || '0'}</div>
+                    <div class="time-cell">${tech.hours.sun || '0'}</div>
+                    <div class="total-cell">${tech.total.toFixed(1)}</div>
+                </div>
+                `).join('')}
+
+                <div class="travel-section">
+                    <div class="travel-header">Travel Time</div>
+                    <div class="time-grid">
+                        <div style="font-weight: 600; color: #92400e;">Travel Hours</div>
+                        <div class="time-cell">${travelHours.mon || '0'}</div>
+                        <div class="time-cell">${travelHours.tue || '0'}</div>
+                        <div class="time-cell">${travelHours.wed || '0'}</div>
+                        <div class="time-cell">${travelHours.thu || '0'}</div>
+                        <div class="time-cell">${travelHours.fri || '0'}</div>
+                        <div class="time-cell">${travelHours.sat || '0'}</div>
+                        <div class="time-cell">${travelHours.sun || '0'}</div>
+                        <div class="total-cell">${totalTravelHours.toFixed(1)}</div>
+                    </div>
+                </div>
+            </div>
+
+            ${jobDetails.length > 0 ? `
+            <div class="section">
+                <div class="section-title">Job Details & Equipment</div>
+                <table class="job-table">
+                    <thead>
+                        <tr>
+                            <th>Work Description</th>
+                            <th>Equipment</th>
+                            <th>Materials</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${jobDetails.map(job => `
+                        <tr>
+                            <td>${job.workDescription}</td>
+                            <td>${job.equipment}</td>
+                            <td>${job.materials}</td>
+                            <td>${job.quantity}</td>
+                        </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            ` : ''}
+
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>${totalRegularHours.toFixed(1)}</h3>
+                    <p>Regular Hours</p>
+                </div>
+                <div class="summary-card">
+                    <h3>${totalTravelHours.toFixed(1)}</h3>
+                    <p>Travel Hours</p>
+                </div>
+                <div class="summary-card">
+                    <h3>${grandTotalHours.toFixed(1)}</h3>
+                    <p>Total Hours</p>
+                </div>
+                <div class="summary-card">
+                    <h3>${totalTechnicians}</h3>
+                    <p>Technicians</p>
+                </div>
+            </div>
+
+            ${timesheetData.notes ? `
+            <div class="section">
+                <div class="section-title">Notes</div>
+                <div class="form-value">${timesheetData.notes.replace(/\n/g, '<br>')}</div>
+            </div>
+            ` : ''}
+
+            <div class="signature-section">
+                <div class="signature-box">
+                    <h4>Technician Signature</h4>
+                    <p style="margin-top: 60px;">Date: ________________</p>
+                </div>
+                <div class="signature-box">
+                    <h4>Supervisor Signature</h4>
+                    <p style="margin-top: 60px;">Date: ________________</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

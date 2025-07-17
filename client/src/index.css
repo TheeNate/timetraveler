@@ -113,6 +113,11 @@
   backdrop-filter: blur(10px);
 }
 
+.timesheet-info-card input {
+  color: black !important;
+  background: white !important;
+}
+
 .timesheet-content {
   padding: 30px;
 }
