@@ -442,36 +442,7 @@ export default function Timesheet() {
     }
   };
 
-  const saveAsJSON = () => {
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10);
-    const timeStr = now.toTimeString().slice(0, 5).replace(':', '');
-    const jobNum = timesheetData.jobNumber || 'NoJob';
-    const filename = `Timesheet_${jobNum}_${dateStr}_${timeStr}.json`;
 
-    const data = {
-      technicians,
-      jobDetails,
-      travelHours,
-      timesheetData,
-      totals: {
-        totalRegularHours,
-        totalTravelHours,
-        grandTotalHours,
-        totalTechnicians
-      }
-    };
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    alert(`Data saved as: ${filename}`);
-  };
 
   const printTimesheet = () => {
     window.print();
@@ -745,14 +716,7 @@ export default function Timesheet() {
                 onClick={saveCopy}
                 style={{ background: '#059669', marginLeft: '10px' }}
               >
-                💾 Save as HTML
-              </button>
-              <button 
-                className="timesheet-add-btn" 
-                onClick={saveAsJSON}
-                style={{ background: '#7c3aed', marginLeft: '10px' }}
-              >
-                📋 Save as JSON
+                💾 Save Copy
               </button>
               <button 
                 className="timesheet-add-btn" 
