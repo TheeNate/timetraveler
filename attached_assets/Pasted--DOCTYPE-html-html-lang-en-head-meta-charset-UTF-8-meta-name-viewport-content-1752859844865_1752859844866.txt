@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LeNDT Rope Access Analysis">
+    <title>LeNDT Rope Access Hazard Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            padding: 10px;
+            line-height: 1.4;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c5aa0;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .form-section {
+            border: 2px solid #2c5aa0;
+            margin: 0;
+            background: white;
+        }
+
+        .section-header {
+            background: #2c5aa0;
+            color: white;
+            padding: 8px 15px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        .form-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .form-table td, .form-table th {
+            border: 1px solid #2c5aa0;
+            padding: 8px;
+            vertical-align: top;
+        }
+
+        .form-table th {
+            background: #2c5aa0;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .methods-column {
+            width: 30%;
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .comments-column {
+            width: 15%;
+            text-align: center;
+        }
+
+        .items-column {
+            width: 40%;
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .text-input {
+            width: 100%;
+            border: 1px solid #ccc;
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 4px;
+            min-height: 44px;
+            resize: vertical;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.2);
+        }
+
+        .large-text-area {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .rigging-section {
+            margin-top: 0;
+        }
+
+        .rescue-section {
+            margin-top: 0;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+        }
+
+        .consideration-cell {
+            width: 25%;
+            background: #f8f9fa;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .comments-cell {
+            width: 75%;
+        }
+
+        .hazard-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .hazard-option {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* iPad specific optimizations */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .container {
+                margin: 5px;
+            }
+            
+            .text-input {
+                font-size: 16px;
+                min-height: 44px;
+                padding: 12px;
+            }
+            
+            .checkbox-item input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
+                min-height: 20px;
+            }
+        }
+
+        /* Touch-friendly improvements */
+        .text-input:focus {
+            transform: scale(1.01);
+            transition: transform 0.2s ease;
+        }
+
+        /* Print styles for PDF export */
+        @media print {
+            body { 
+                background: white !important; 
+                padding: 0 !important;
+                font-size: 11px !important;
+            }
+            
+            .container {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                max-width: none !important;
+                margin: 0 !important;
+            }
+            
+            .form-table td, .form-table th {
+                padding: 6px !important;
+            }
+            
+            .text-input {
+                border: 1px solid #2c5aa0 !important;
+                background: white !important;
+                color: black !important;
+                font-size: 10px !important;
+                min-height: auto !important;
+                padding: 4px !important;
+            }
+            
+            .checkbox-item input[type="checkbox"] {
+                width: 12px !important;
+                height: 12px !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .section-header {
+                font-size: 12px !important;
+                padding: 6px !important;
+            }
+            
+            .header {
+                font-size: 14px !important;
+                padding: 15px !important;
+            }
+        }
+
+        .export-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .export-btn {
+            background: #2c5aa0;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+
+        .export-btn:hover {
+            background: #1e4080;
+        }
+
+        @media print {
+            .export-controls {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="export-controls">
+        <button class="export-btn" onclick="exportToPDF()">Export PDF</button>
+        <button class="export-btn" onclick="window.print()">Print</button>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            LeNDT<br>
+            Rope Access Hazard Analysis
+        </div>
+
+        <!-- Page 1: Rope Access Methods and Rigging -->
+        <div class="form-section">
+            <div class="section-header">ROPE ACCESS</div>
+            <table class="form-table">
+                <tr>
+                    <th class="methods-column">Methods of Access</th>
+                    <th class="comments-column">Comments</th>
+                    <th class="items-column">Item</th>
+                    <th class="comments-column">Comments:</th>
+                </tr>
+                <tr>
+                    <td class="methods-column">Appropriate equipment</td>
+                    <td class="comments-column">
+                        <input type="checkbox">
+                    </td>
+                    <td class="items-column">Fall arrest/ Restraint/ Protection</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="methods-column">Rope transfers</td>
+                    <td class="comments-column">
+                        <input type="checkbox">
+                    </td>
+                    <td class="items-column">Horizontal lines</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="methods-column">Deviation/Re-Anchor/Passing-Knots</td>
+                    <td class="comments-column">
+                        <input type="checkbox">
+                    </td>
+                    <td class="items-column">Lead Climbing (specific access plan required)</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="methods-column">Walking Aid Climbing / Pipe Rack</td>
+                    <td class="comments-column">
+                        <input type="checkbox">
+                    </td>
+                    <td class="items-column">Alternate access method</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="methods-column">Suspended Aid Climbing</td>
+                    <td class="comments-column">
+                        <input type="checkbox">
+                    </td>
+                    <td class="items-column"></td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="form-section rigging-section">
+            <div class="section-header">RIGGING</div>
+            <table class="form-table">
+                <tr>
+                    <th style="width: 30%;">Rigging Plan – Written or Diagram</th>
+                    <th class="consideration-cell">Consideration</th>
+                    <th class="comments-cell">Comments:</th>
+                </tr>
+                <tr>
+                    <td rowspan="11" style="vertical-align: top;">
+                        <textarea class="text-input large-text-area" placeholder="Describe rigging plan or attach diagram"></textarea>
+                    </td>
+                    <td class="consideration-cell">Anchorage Type(s)</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Anchorage 5000lbs</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Anchor system</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Deviation / Re-Anchor / Passing Knots</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Stopper Knots/ Ropes Bagged</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Sentry Required</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Rope Hazard(s)</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Removal of Hazard Available</td>
+                    <td class="comments-cell">
+                        <div class="hazard-options">
+                            <div class="hazard-option">
+                                <input type="checkbox" id="de-energize">
+                                <label for="de-energize">De-Energize</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="re-schedule">
+                                <label for="re-schedule">Re-Schedule</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="other1">
+                                <label for="other1">Other</label>
+                            </div>
+                        </div>
+                        <textarea class="text-input" rows="1" placeholder="Other details"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Avoid Hazard</td>
+                    <td class="comments-cell">
+                        <div class="hazard-options">
+                            <div class="hazard-option">
+                                <input type="checkbox" id="barrier">
+                                <label for="barrier">Barrier</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="re-anchor">
+                                <label for="re-anchor">Re-Anchor</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="deviation">
+                                <label for="deviation">Deviation</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="y-anchor">
+                                <label for="y-anchor">Y-Anchor</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="other2">
+                                <label for="other2">Other</label>
+                            </div>
+                        </div>
+                        <textarea class="text-input" rows="1" placeholder="Other details"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Rope Hazard Protection</td>
+                    <td class="comments-cell">
+                        <div class="hazard-options">
+                            <div class="hazard-option">
+                                <input type="checkbox" id="ice-tray">
+                                <label for="ice-tray">Ice-Tray</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="through-grate">
+                                <label for="through-grate">Through-Grate</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="engineered">
+                                <label for="engineered">Engineered</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="fabric">
+                                <label for="fabric">Fabric</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="roller">
+                                <label for="roller">Roller</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="other3">
+                                <label for="other3">Other</label>
+                            </div>
+                        </div>
+                        <textarea class="text-input" rows="1" placeholder="Other details"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Equipment Drop-Proof</td>
+                    <td class="comments-cell">
+                        <div class="hazard-options">
+                            <div class="hazard-option">
+                                <input type="checkbox" id="lanyard">
+                                <label for="lanyard">Lanyard.</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="separate-rope">
+                                <label for="separate-rope">Separate Rope.</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="bagged">
+                                <label for="bagged">Bagged</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="other4">
+                                <label for="other4">Other</label>
+                            </div>
+                        </div>
+                        <textarea class="text-input" rows="1" placeholder="Other details"></textarea>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Page 2: Rope Access Rigging & Rescue -->
+        <div class="form-section rescue-section">
+            <div class="section-header">ROPE ACCESS RIGGING & RESCUE</div>
+            <table class="form-table">
+                <tr>
+                    <th style="width: 25%;">Appropriate Personnel / Rescue Equipment</th>
+                    <th colspan="2" style="width: 50%;">Simple Remote Rescue- Rig for Rescue</th>
+                    <th style="width: 25%;">Comments:</th>
+                </tr>
+                <tr>
+                    <td rowspan="5" style="vertical-align: top;">
+                        <textarea class="text-input large-text-area" placeholder="List personnel and rescue equipment"></textarea>
+                    </td>
+                    <td class="consideration-cell">Communication Methods</td>
+                    <td class="comments-cell">
+                        <div class="hazard-options">
+                            <div class="hazard-option">
+                                <input type="checkbox" id="verbal">
+                                <label for="verbal">Verbal</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="radio">
+                                <label for="radio">Radio</label>
+                            </div>
+                            <div class="hazard-option">
+                                <input type="checkbox" id="hand-signal">
+                                <label for="hand-signal">Hand Signal</label>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Designated Safe Zone</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Simple Intervention Rescue– Pick, Snatch</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Remote Rescue Complex– Winch, MEWP, etc</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="consideration-cell">Complex Intervention– Rope to Rope, Aid, etc</td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                    <td class="comments-cell">
+                        <textarea class="text-input" rows="2"></textarea>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="background: #2c5aa0; color: white; font-weight: bold; text-align: center; padding: 10px;">
+                        Rescue Plan - Diagram or Written
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="height: 300px; vertical-align: top;">
+                        <textarea class="text-input large-text-area" style="height: 280px;" placeholder="Describe rescue plan or attach diagram"></textarea>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Auto-save functionality
+        function saveFormData() {
+            const formData = {};
+            document.querySelectorAll('input, textarea').forEach(element => {
+                if (element.type === 'checkbox') {
+                    formData[element.id || element.name] = element.checked;
+                } else {
+                    formData[element.id || element.name] = element.value;
+                }
+            });
+            localStorage.setItem('ropeAccessHazardAnalysis', JSON.stringify(formData));
+        }
+
+        function loadFormData() {
+            const savedData = localStorage.getItem('ropeAccessHazardAnalysis');
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                Object.keys(formData).forEach(key => {
+                    const element = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
+                    if (element) {
+                        if (element.type === 'checkbox') {
+                            element.checked = formData[key];
+                        } else {
+                            element.value = formData[key];
+                        }
+                    }
+                });
+            }
+        }
+
+        // PDF Export functionality
+        function exportToPDF() {
+            const originalTitle = document.title;
+            document.title = 'LeNDT_Rope_Access_Hazard_Analysis_' + new Date().toISOString().split('T')[0];
+            
+            // Temporarily hide export controls
+            const exportControls = document.querySelector('.export-controls');
+            exportControls.style.display = 'none';
+            
+            // Print
+            window.print();
+            
+            // Restore export controls
+            setTimeout(() => {
+                exportControls.style.display = 'block';
+                document.title = originalTitle;
+            }, 1000);
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(saveFormData, 30000);
+
+        // Save on input changes
+        document.addEventListener('input', saveFormData);
+        document.addEventListener('change', saveFormData);
+
+        // Load saved data on page load
+        document.addEventListener('DOMContentLoaded', loadFormData);
+
+        // Prevent zoom on input focus for iOS
+        document.addEventListener('touchstart', function() {
+            document.querySelectorAll('input, textarea').forEach(element => {
+                element.style.fontSize = '16px';
+            });
+        });
+    </script>
+</body>
+</html>
