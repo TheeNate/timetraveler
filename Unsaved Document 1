@@ -1,0 +1,32 @@
+sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.
+Promise.then		
+(anonymous)	@	sw.js:78
+localhost/:36 
+ GET http://localhost:5000/@vite/client net::ERR_FAILED
+2
+sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.
+Promise.then		
+(anonymous)	@	sw.js:78
+localhost/:29 
+ GET http://localhost:5000/@react-refresh net::ERR_FAILED
+2
+sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.
+Promise.then		
+(anonymous)	@	sw.js:78
+App.tsx:17 
+ GET http://localhost:5000/src/components/Timesheet.tsx net::ERR_FAILED
+2
+sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.
+Promise.then		
+(anonymous)	@	sw.js:78
+:5000/favicon.ico:1 
+ GET http://localhost:5000/favicon.ico net::ERR_FAILED
+sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.
+Promise.then		
+(anonymous)	@	sw.js:78
+:5000/icon-192.svg:1 
+ GET http://localhost:5000/icon-192.svg net::ERR_FAILED
+sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response'.
+Promise.then		
+(anonymous)	@	sw.js:78
+localhost/:1 Error while trying to use the following icon from the Manifest: http://localhost:5000/icon-192.svg (Download error or resource isn't a valid image)

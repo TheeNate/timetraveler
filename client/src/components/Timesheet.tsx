@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import jsPDF from 'jspdf';
 
 interface Technician {
   id: string;
@@ -480,8 +481,178 @@ export default function Timesheet() {
     }
   };
 
-  const printTimesheet = () => {
-    window.print();
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - 2 * margin;
+    let yPosition = margin;
+
+    // Header
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("CORDA VERTICAL TRAVELER", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 10;
+
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "normal");
+    doc.text("TIMESHEET", pageWidth / 2, yPosition, { align: "center" });
+    yPosition += 15;
+
+    // Job Information
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("JOB INFORMATION", margin, yPosition);
+    yPosition += 8;
+
+    doc.setFont("helvetica", "normal");
+    const jobInfo = [
+      [`Date: ${timesheetData.date}`, `Job #: ${timesheetData.jobNumber}`],
+      [`WO #: ${timesheetData.woNumber}`, `CO #: ${timesheetData.coNumber}`],
+      [`Client: ${timesheetData.client}`, `Contact: ${timesheetData.contact}`],
+      [`Location: ${timesheetData.location}`, `Phone: ${timesheetData.contactPhone}`]
+    ];
+
+    jobInfo.forEach(([left, right]) => {
+      doc.text(left, margin, yPosition);
+      doc.text(right, pageWidth / 2, yPosition);
+      yPosition += 6;
+    });
+
+    yPosition += 5;
+
+    // Time Tracking Table
+    doc.setFont("helvetica", "bold");
+    doc.text("TIME TRACKING", margin, yPosition);
+    yPosition += 8;
+
+    // Table headers
+    const colWidth = contentWidth / 9;
+    const headers = ["Technician", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Total"];
+    
+    doc.setFontSize(8);
+    headers.forEach((header, index) => {
+      doc.text(header, margin + index * colWidth, yPosition);
+    });
+    yPosition += 5;
+
+    // Draw header line
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 3;
+
+    // Technician rows
+    doc.setFont("helvetica", "normal");
+    technicians.forEach((tech) => {
+      const rowData = [
+        tech.name || "Unnamed",
+        tech.hours.mon.toString(),
+        tech.hours.tue.toString(),
+        tech.hours.wed.toString(),
+        tech.hours.thu.toString(),
+        tech.hours.fri.toString(),
+        tech.hours.sat.toString(),
+        tech.hours.sun.toString(),
+        tech.total.toFixed(1)
+      ];
+      
+      rowData.forEach((data, index) => {
+        doc.text(data, margin + index * colWidth, yPosition);
+      });
+      yPosition += 5;
+    });
+
+    // Travel time
+    yPosition += 3;
+    doc.setFont("helvetica", "bold");
+    doc.text("TRAVEL TIME", margin, yPosition);
+    yPosition += 5;
+
+    doc.setFont("helvetica", "normal");
+    const travelData = [
+      "Travel",
+      travelHours.mon.toString(),
+      travelHours.tue.toString(),
+      travelHours.wed.toString(),
+      travelHours.thu.toString(),
+      travelHours.fri.toString(),
+      travelHours.sat.toString(),
+      travelHours.sun.toString(),
+      totalTravelHours.toFixed(1)
+    ];
+    
+    travelData.forEach((data, index) => {
+      doc.text(data, margin + index * colWidth, yPosition);
+    });
+    yPosition += 10;
+
+    // Summary
+    doc.setFont("helvetica", "bold");
+    doc.text("SUMMARY", margin, yPosition);
+    yPosition += 8;
+
+    doc.setFont("helvetica", "normal");
+    doc.text(`Regular Hours: ${totalRegularHours.toFixed(1)}`, margin, yPosition);
+    doc.text(`Travel Hours: ${totalTravelHours.toFixed(1)}`, pageWidth / 2, yPosition);
+    yPosition += 6;
+    doc.text(`Total Hours: ${grandTotalHours.toFixed(1)}`, margin, yPosition);
+    doc.text(`Technicians: ${totalTechnicians}`, pageWidth / 2, yPosition);
+    yPosition += 10;
+
+    // Equipment/Job Details (if any)
+    if (jobDetails.length > 0) {
+      doc.setFont("helvetica", "bold");
+      doc.text("EQUIPMENT & MATERIALS", margin, yPosition);
+      yPosition += 8;
+
+      doc.setFont("helvetica", "normal");
+      jobDetails.forEach((job, index) => {
+        if (yPosition > pageHeight - 30) return; // Stop if near page bottom
+        
+        const details = [
+          job.equipment ? `Equipment: ${job.equipment}` : '',
+          job.workDescription ? `Description: ${job.workDescription}` : '',
+          job.materials ? `Materials: ${job.materials}` : '',
+          job.quantity ? `Quantity: ${job.quantity}` : ''
+        ].filter(Boolean).join(' | ');
+        
+        if (details) {
+          doc.text(`${index + 1}. ${details}`, margin, yPosition);
+          yPosition += 5;
+        }
+      });
+      yPosition += 5;
+    }
+
+    // Notes
+    if (timesheetData.notes && yPosition < pageHeight - 30) {
+      doc.setFont("helvetica", "bold");
+      doc.text("NOTES", margin, yPosition);
+      yPosition += 8;
+
+      doc.setFont("helvetica", "normal");
+      const notes = timesheetData.notes.split('\n');
+      notes.forEach((note) => {
+        if (yPosition > pageHeight - 20) return;
+        doc.text(note, margin, yPosition);
+        yPosition += 5;
+      });
+    }
+
+    // Signature lines at bottom
+    const signatureY = pageHeight - 40;
+    doc.line(margin, signatureY, margin + 80, signatureY);
+    doc.line(pageWidth - margin - 80, signatureY, pageWidth - margin, signatureY);
+    
+    doc.setFontSize(8);
+    doc.text("Technician Signature", margin, signatureY + 5);
+    doc.text("Date: ___________", margin, signatureY + 10);
+    doc.text("Supervisor Signature", pageWidth - margin - 80, signatureY + 5);
+    doc.text("Date: ___________", pageWidth - margin - 80, signatureY + 10);
+
+    // Save the PDF
+    const filename = `Timesheet_${timesheetData.jobNumber || 'NoJob'}_${timesheetData.date}.pdf`;
+    doc.save(filename);
   };
 
   return (
@@ -801,10 +972,10 @@ export default function Timesheet() {
               </button>
               <button 
                 className="timesheet-add-btn" 
-                onClick={printTimesheet}
+                onClick={exportToPDF}
                 style={{ background: '#3b82f6', marginLeft: '10px' }}
               >
-                📄 Print/Export
+                📄 Export PDF
               </button>
             </div>
           </div>

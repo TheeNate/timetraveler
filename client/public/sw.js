@@ -6,15 +6,9 @@ const DATA_CACHE_NAME = 'cvt-timesheet-data-v1.0.0';
 const FILES_TO_CACHE = [
   '/',
   '/index.html',
-  '/src/main.tsx',
-  '/src/App.tsx',
-  '/src/index.css',
-  '/src/components/Timesheet.tsx',
-  '/src/pages/home.tsx',
-  '/src/pages/not-found.tsx',
   '/manifest.json',
-  // Add common assets
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+  '/icon-192.svg',
+  '/icon-512.svg'
 ];
 
 // Install event - cache initial files
@@ -67,7 +61,13 @@ self.addEventListener('fetch', (event) => {
           })
           .catch(() => {
             // If the fetch fails (offline), try to get the data from cache
-            return cache.match(event.request);
+            return cache.match(event.request).then((cachedResponse) => {
+              return cachedResponse || new Response('{"error": "API not available offline"}', { 
+                status: 503, 
+                statusText: 'Service Unavailable',
+                headers: { 'Content-Type': 'application/json' }
+              });
+            });
           });
       })
     );
@@ -82,8 +82,12 @@ self.addEventListener('fetch', (event) => {
         return response || fetch(event.request).catch(() => {
           // If both cache and network fail, return offline page for navigation requests
           if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+            return caches.match('/index.html').then((indexResponse) => {
+              return indexResponse || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+            });
           }
+          // For non-navigation requests, return a basic error response
+          return new Response('Resource not available offline', { status: 503, statusText: 'Service Unavailable' });
         });
       })
   );
