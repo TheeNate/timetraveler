@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 
 interface Technician {
   id: string;
@@ -482,206 +480,117 @@ export default function Timesheet() {
     }
   };
 
-  const printTimesheet = () => {
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    
-    // Define colors and styles
-    const primaryColor = [44, 90, 160]; // #2c5aa0
-    const lightGray = [245, 247, 250];
-    const darkGray = [64, 64, 64];
-    
-    let yPos = 15;
-    
-    // Header - Company Name
-    doc.setFillColor(...primaryColor);
-    doc.rect(10, yPos, pageWidth - 20, 15, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CORDA VERTICAL TRAVELER', pageWidth / 2, yPos + 10, { align: 'center' });
-    
-    yPos += 20;
-    
-    // Job Information Header Grid
-    doc.setTextColor(...darkGray);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    
-    // First row of job info
-    const col1Width = 40;
-    const col2Width = 35;
-    const col3Width = 40;
-    const col4Width = 35;
-    
-    // Date
-    doc.text('Date:', 15, yPos);
-    doc.rect(15 + col1Width - 35, yPos - 4, 30, 6);
-    doc.text(timesheetData.date, 15 + col1Width - 32, yPos);
-    
-    // Job Number
-    doc.text('Job #:', 15 + col1Width, yPos);
-    doc.rect(15 + col1Width + col2Width - 30, yPos - 4, 25, 6);
-    doc.text(timesheetData.jobNumber, 15 + col1Width + col2Width - 27, yPos);
-    
-    // WO Number
-    doc.text('WO #:', 15 + col1Width + col2Width + 10, yPos);
-    doc.rect(15 + col1Width + col2Width + col3Width - 20, yPos - 4, 25, 6);
-    doc.text(timesheetData.woNumber, 15 + col1Width + col2Width + col3Width - 17, yPos);
-    
-    // CO Number
-    doc.text('CO #:', 15 + col1Width + col2Width + col3Width + 15, yPos);
-    doc.rect(15 + col1Width + col2Width + col3Width + col4Width - 10, yPos - 4, 25, 6);
-    doc.text(timesheetData.coNumber, 15 + col1Width + col2Width + col3Width + col4Width - 7, yPos);
-    
-    yPos += 12;
-    
-    // Second row - Client and Location
-    doc.text('Client:', 15, yPos);
-    doc.rect(30, yPos - 4, 60, 6);
-    doc.text(timesheetData.client, 32, yPos);
-    
-    doc.text('Location:', 100, yPos);
-    doc.rect(120, yPos - 4, 60, 6);
-    doc.text(timesheetData.location, 122, yPos);
-    
-    yPos += 15;
-    
-    // Main Time Tracking Table
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TECHNICIAN TIME TRACKING', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 8;
-    
-    // Create the main timesheet table
-    const tableData = technicians.map(tech => [
-      tech.name,
-      tech.hours.mon.toString(),
-      tech.hours.tue.toString(),
-      tech.hours.wed.toString(),
-      tech.hours.thu.toString(),
-      tech.hours.fri.toString(),
-      tech.hours.sat.toString(),
-      tech.hours.sun.toString(),
-      (tech.hours.mon + tech.hours.tue + tech.hours.wed + tech.hours.thu + 
-       tech.hours.fri + tech.hours.sat + tech.hours.sun).toString()
-    ]);
-    
-    // Add totals row
-    const totals = ['TOTALS'];
-    let dayTotals = [0, 0, 0, 0, 0, 0, 0];
-    technicians.forEach(tech => {
-      dayTotals[0] += tech.hours.mon;
-      dayTotals[1] += tech.hours.tue;
-      dayTotals[2] += tech.hours.wed;
-      dayTotals[3] += tech.hours.thu;
-      dayTotals[4] += tech.hours.fri;
-      dayTotals[5] += tech.hours.sat;
-      dayTotals[6] += tech.hours.sun;
-    });
-    
-    totals.push(...dayTotals.map(t => t.toString()));
-    totals.push(dayTotals.reduce((a, b) => a + b, 0).toString());
-    tableData.push(totals);
-    
-    (doc as any).autoTable({
-      startY: yPos,
-      head: [['Technician Name', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Total']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: { 
-        fillColor: primaryColor,
-        textColor: 255,
-        fontSize: 9,
-        fontStyle: 'bold'
-      },
-      bodyStyles: { 
-        fontSize: 8,
-        cellPadding: 2
-      },
-      columnStyles: {
-        0: { cellWidth: 40 },
-        1: { cellWidth: 15, halign: 'center' },
-        2: { cellWidth: 15, halign: 'center' },
-        3: { cellWidth: 15, halign: 'center' },
-        4: { cellWidth: 15, halign: 'center' },
-        5: { cellWidth: 15, halign: 'center' },
-        6: { cellWidth: 15, halign: 'center' },
-        7: { cellWidth: 15, halign: 'center' },
-        8: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }
-      },
-      margin: { left: 15, right: 15 }
-    });
-    
-    yPos = (doc as any).lastAutoTable.finalY + 15;
-    
-    // Travel Time Section
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TRAVEL TIME', 15, yPos);
-    yPos += 5;
-    
-    const travelData = [[
-      travelHours.mon.toString(),
-      travelHours.tue.toString(),
-      travelHours.wed.toString(),
-      travelHours.thu.toString(),
-      travelHours.fri.toString(),
-      travelHours.sat.toString(),
-      travelHours.sun.toString(),
-      (travelHours.mon + travelHours.tue + travelHours.wed + travelHours.thu + 
-       travelHours.fri + travelHours.sat + travelHours.sun).toString()
-    ]];
-    
-    (doc as any).autoTable({
-      startY: yPos,
-      head: [['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Total']],
-      body: travelData,
-      theme: 'striped',
-      headStyles: { 
-        fillColor: primaryColor,
-        textColor: 255,
-        fontSize: 9,
-        fontStyle: 'bold'
-      },
-      bodyStyles: { 
-        fontSize: 8,
-        cellPadding: 2,
-        halign: 'center'
-      },
-      columnStyles: {
-        0: { cellWidth: 20 },
-        1: { cellWidth: 20 },
-        2: { cellWidth: 20 },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 20 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: 20 },
-        7: { cellWidth: 25, fontStyle: 'bold' }
-      },
-      margin: { left: 15, right: 15 }
-    });
-    
-    yPos = (doc as any).lastAutoTable.finalY + 15;
-    
-    // Job Details Section
-    if (jobDetails.length > 0) {
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text('EQUIPMENT / JOB DETAILS', 15, yPos);
-      yPos += 5;
+  const printTimesheet = async () => {
+    try {
+      // Dynamic import to avoid React initialization issues
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
       
-      const jobData = jobDetails.map(job => [
-        job.equipment,
-        job.description,
-        job.notes
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      
+      // Define colors and styles
+      const primaryColor = [44, 90, 160]; // #2c5aa0
+      const darkGray = [64, 64, 64];
+      
+      let yPos = 15;
+      
+      // Header - Company Name
+      doc.setFillColor(...primaryColor);
+      doc.rect(10, yPos, pageWidth - 20, 15, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('CORDA VERTICAL TRAVELER', pageWidth / 2, yPos + 10, { align: 'center' });
+      
+      yPos += 20;
+      
+      // Job Information Header Grid
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      // First row of job info
+      const col1Width = 40;
+      const col2Width = 35;
+      const col3Width = 40;
+      const col4Width = 35;
+      
+      // Date
+      doc.text('Date:', 15, yPos);
+      doc.rect(15 + col1Width - 35, yPos - 4, 30, 6);
+      doc.text(timesheetData.date, 15 + col1Width - 32, yPos);
+      
+      // Job Number
+      doc.text('Job #:', 15 + col1Width, yPos);
+      doc.rect(15 + col1Width + col2Width - 30, yPos - 4, 25, 6);
+      doc.text(timesheetData.jobNumber, 15 + col1Width + col2Width - 27, yPos);
+      
+      // WO Number
+      doc.text('WO #:', 15 + col1Width + col2Width + 10, yPos);
+      doc.rect(15 + col1Width + col2Width + col3Width - 20, yPos - 4, 25, 6);
+      doc.text(timesheetData.woNumber, 15 + col1Width + col2Width + col3Width - 17, yPos);
+      
+      // CO Number
+      doc.text('CO #:', 15 + col1Width + col2Width + col3Width + 15, yPos);
+      doc.rect(15 + col1Width + col2Width + col3Width + col4Width - 10, yPos - 4, 25, 6);
+      doc.text(timesheetData.coNumber, 15 + col1Width + col2Width + col3Width + col4Width - 7, yPos);
+      
+      yPos += 12;
+      
+      // Second row - Client and Location
+      doc.text('Client:', 15, yPos);
+      doc.rect(30, yPos - 4, 60, 6);
+      doc.text(timesheetData.client, 32, yPos);
+      
+      doc.text('Location:', 100, yPos);
+      doc.rect(120, yPos - 4, 60, 6);
+      doc.text(timesheetData.location, 122, yPos);
+      
+      yPos += 15;
+      
+      // Main Time Tracking Table
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TECHNICIAN TIME TRACKING', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 8;
+      
+      // Create the main timesheet table
+      const tableData = technicians.map(tech => [
+        tech.name,
+        tech.hours.mon.toString(),
+        tech.hours.tue.toString(),
+        tech.hours.wed.toString(),
+        tech.hours.thu.toString(),
+        tech.hours.fri.toString(),
+        tech.hours.sat.toString(),
+        tech.hours.sun.toString(),
+        (tech.hours.mon + tech.hours.tue + tech.hours.wed + tech.hours.thu + 
+         tech.hours.fri + tech.hours.sat + tech.hours.sun).toString()
       ]);
       
-      (doc as any).autoTable({
+      // Add totals row
+      const totals = ['TOTALS'];
+      let dayTotals = [0, 0, 0, 0, 0, 0, 0];
+      technicians.forEach(tech => {
+        dayTotals[0] += tech.hours.mon;
+        dayTotals[1] += tech.hours.tue;
+        dayTotals[2] += tech.hours.wed;
+        dayTotals[3] += tech.hours.thu;
+        dayTotals[4] += tech.hours.fri;
+        dayTotals[5] += tech.hours.sat;
+        dayTotals[6] += tech.hours.sun;
+      });
+      
+      totals.push(...dayTotals.map(t => t.toString()));
+      totals.push(dayTotals.reduce((a, b) => a + b, 0).toString());
+      tableData.push(totals);
+      
+      autoTable(doc, {
         startY: yPos,
-        head: [['Equipment', 'Description', 'Notes']],
-        body: jobData,
+        head: [['Technician Name', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Total']],
+        body: tableData,
         theme: 'striped',
         headStyles: { 
           fillColor: primaryColor,
@@ -691,72 +600,170 @@ export default function Timesheet() {
         },
         bodyStyles: { 
           fontSize: 8,
-          cellPadding: 3
+          cellPadding: 2
         },
         columnStyles: {
           0: { cellWidth: 40 },
-          1: { cellWidth: 70 },
-          2: { cellWidth: 55 }
+          1: { cellWidth: 15, halign: 'center' },
+          2: { cellWidth: 15, halign: 'center' },
+          3: { cellWidth: 15, halign: 'center' },
+          4: { cellWidth: 15, halign: 'center' },
+          5: { cellWidth: 15, halign: 'center' },
+          6: { cellWidth: 15, halign: 'center' },
+          7: { cellWidth: 15, halign: 'center' },
+          8: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }
         },
         margin: { left: 15, right: 15 }
       });
       
       yPos = (doc as any).lastAutoTable.finalY + 15;
-    }
-    
-    // Job Description and Notes if available
-    if (timesheetData.jobDescription || timesheetData.notes) {
-      if (yPos > pageHeight - 50) {
-        doc.addPage();
-        yPos = 20;
+      
+      // Travel Time Section
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TRAVEL TIME', 15, yPos);
+      yPos += 5;
+      
+      const travelData = [[
+        travelHours.mon.toString(),
+        travelHours.tue.toString(),
+        travelHours.wed.toString(),
+        travelHours.thu.toString(),
+        travelHours.fri.toString(),
+        travelHours.sat.toString(),
+        travelHours.sun.toString(),
+        (travelHours.mon + travelHours.tue + travelHours.wed + travelHours.thu + 
+         travelHours.fri + travelHours.sat + travelHours.sun).toString()
+      ]];
+      
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Total']],
+        body: travelData,
+        theme: 'striped',
+        headStyles: { 
+          fillColor: primaryColor,
+          textColor: 255,
+          fontSize: 9,
+          fontStyle: 'bold'
+        },
+        bodyStyles: { 
+          fontSize: 8,
+          cellPadding: 2,
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { cellWidth: 20 },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 20 },
+          6: { cellWidth: 20 },
+          7: { cellWidth: 25, fontStyle: 'bold' }
+        },
+        margin: { left: 15, right: 15 }
+      });
+      
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+      
+      // Job Details Section
+      if (jobDetails.length > 0) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('EQUIPMENT / JOB DETAILS', 15, yPos);
+        yPos += 5;
+        
+        const jobData = jobDetails.map(job => [
+          job.equipment,
+          job.workDescription,
+          job.materials
+        ]);
+        
+        autoTable(doc, {
+          startY: yPos,
+          head: [['Equipment', 'Description', 'Materials']],
+          body: jobData,
+          theme: 'striped',
+          headStyles: { 
+            fillColor: primaryColor,
+            textColor: 255,
+            fontSize: 9,
+            fontStyle: 'bold'
+          },
+          bodyStyles: { 
+            fontSize: 8,
+            cellPadding: 3
+          },
+          columnStyles: {
+            0: { cellWidth: 40 },
+            1: { cellWidth: 70 },
+            2: { cellWidth: 55 }
+          },
+          margin: { left: 15, right: 15 }
+        });
+        
+        yPos = (doc as any).lastAutoTable.finalY + 15;
       }
       
-      if (timesheetData.jobDescription) {
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Job Description:', 15, yPos);
-        yPos += 5;
-        doc.setFont('helvetica', 'normal');
-        doc.text(timesheetData.jobDescription, 15, yPos, { maxWidth: pageWidth - 30 });
-        yPos += 15;
+      // Job Description and Notes if available
+      if (timesheetData.jobDescription || timesheetData.notes) {
+        if (yPos > pageHeight - 50) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        if (timesheetData.jobDescription) {
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Job Description:', 15, yPos);
+          yPos += 5;
+          doc.setFont('helvetica', 'normal');
+          doc.text(timesheetData.jobDescription, 15, yPos, { maxWidth: pageWidth - 30 });
+          yPos += 15;
+        }
+        
+        if (timesheetData.notes) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Notes:', 15, yPos);
+          yPos += 5;
+          doc.setFont('helvetica', 'normal');
+          doc.text(timesheetData.notes, 15, yPos, { maxWidth: pageWidth - 30 });
+          yPos += 15;
+        }
       }
       
-      if (timesheetData.notes) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Notes:', 15, yPos);
-        yPos += 5;
-        doc.setFont('helvetica', 'normal');
-        doc.text(timesheetData.notes, 15, yPos, { maxWidth: pageWidth - 30 });
-        yPos += 15;
-      }
+      // Signature section at bottom
+      const signatureY = Math.max(yPos + 10, pageHeight - 40);
+      
+      // Signature lines
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      
+      // Supervisor signature
+      doc.line(15, signatureY, 80, signatureY);
+      doc.text('Supervisor Signature', 15, signatureY + 5);
+      doc.text('Date: ___________', 15, signatureY + 12);
+      
+      // Employee signature
+      doc.line(110, signatureY, 175, signatureY);
+      doc.text('Employee Signature', 110, signatureY + 5);
+      doc.text('Date: ___________', 110, signatureY + 12);
+      
+      // Footer
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 
+               pageWidth / 2, pageHeight - 10, { align: 'center' });
+      
+      // Save the PDF
+      const filename = `CVT_Timesheet_${timesheetData.date || new Date().toISOString().slice(0, 10)}.pdf`;
+      doc.save(filename);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
     }
-    
-    // Signature section at bottom
-    const signatureY = Math.max(yPos + 10, pageHeight - 40);
-    
-    // Signature lines
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    
-    // Supervisor signature
-    doc.line(15, signatureY, 80, signatureY);
-    doc.text('Supervisor Signature', 15, signatureY + 5);
-    doc.text('Date: ___________', 15, signatureY + 12);
-    
-    // Employee signature
-    doc.line(110, signatureY, 175, signatureY);
-    doc.text('Employee Signature', 110, signatureY + 5);
-    doc.text('Date: ___________', 110, signatureY + 12);
-    
-    // Footer
-    doc.setFontSize(8);
-    doc.setTextColor(128, 128, 128);
-    doc.text(`Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 
-             pageWidth / 2, pageHeight - 10, { align: 'center' });
-    
-    // Save the PDF
-    const filename = `CVT_Timesheet_${timesheetData.date || new Date().toISOString().slice(0, 10)}.pdf`;
-    doc.save(filename);
   };
 
   return (
