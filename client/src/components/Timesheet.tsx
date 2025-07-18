@@ -481,8 +481,6 @@ export default function Timesheet() {
   };
 
   const printTimesheet = () => {
-    // Fallback to window.print() for now to avoid React conflicts
-    // TODO: Implement PDF generation once jsPDF compatibility is resolved
     window.print();
   };
 
