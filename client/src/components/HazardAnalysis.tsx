@@ -374,10 +374,17 @@ export default function HazardAnalysis() {
             display: none !important;
           }
           
+          * {
+            margin: 0 !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
+          }
+          
           body {
             background: white !important;
             padding: 0 !important;
-            font-size: 11px !important;
+            font-size: 8px !important;
+            font-family: Arial, sans-serif !important;
           }
           
           .hazard-container {
@@ -385,19 +392,168 @@ export default function HazardAnalysis() {
             border-radius: 0 !important;
             max-width: none !important;
             margin: 0 !important;
+            width: 100% !important;
+            height: 100vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          
+          .hazard-header {
+            background: white !important;
+            color: black !important;
+            border: 2px solid black !important;
+            padding: 8px !important;
+            text-align: center !important;
+            font-size: 14px !important;
+            font-weight: bold !important;
+            margin-bottom: 2px !important;
+          }
+          
+          .hazard-form-section {
+            border: 1px solid black !important;
+            margin: 0 !important;
+            margin-bottom: 2px !important;
+            background: white !important;
+            flex: 1 !important;
+          }
+          
+          .hazard-section-header {
+            background: black !important;
+            color: white !important;
+            padding: 2px 8px !important;
+            font-weight: bold !important;
+            font-size: 9px !important;
+            text-align: center !important;
+          }
+          
+          .hazard-form-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            background: white !important;
+            height: 100% !important;
           }
           
           .hazard-form-table td, .hazard-form-table th {
-            padding: 6px !important;
+            border: 1px solid black !important;
+            padding: 2px !important;
+            vertical-align: top !important;
+            font-size: 7px !important;
+            line-height: 1.1 !important;
+          }
+          
+          .hazard-form-table th {
+            background: #f0f0f0 !important;
+            color: black !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            font-size: 7px !important;
+          }
+          
+          .hazard-methods-column {
+            width: 25% !important;
+            background: #f8f8f8 !important;
+            font-weight: bold !important;
+            font-size: 6px !important;
+          }
+          
+          .hazard-comments-column {
+            width: 8% !important;
+            text-align: center !important;
+          }
+          
+          .hazard-items-column {
+            width: 35% !important;
+            background: #f8f8f8 !important;
+            font-weight: bold !important;
+            font-size: 6px !important;
+          }
+          
+          .hazard-comments-cell {
+            width: 32% !important;
+          }
+          
+          .hazard-consideration-cell {
+            width: 20% !important;
+            background: #f8f8f8 !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            font-size: 6px !important;
+          }
+          
+          .hazard-checkbox-group {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 2px !important;
+            align-items: center !important;
+          }
+          
+          .hazard-checkbox-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 1px !important;
+            white-space: nowrap !important;
+            font-size: 6px !important;
+          }
+          
+          .hazard-checkbox-item input[type="checkbox"] {
+            width: 8px !important;
+            height: 8px !important;
+            margin: 0 !important;
+            cursor: pointer !important;
+          }
+          
+          .hazard-checkbox-item label {
+            font-size: 6px !important;
           }
           
           .hazard-text-input {
-            border: 1px solid #2c5aa0 !important;
+            border: 1px solid black !important;
             background: white !important;
             color: black !important;
-            font-size: 10px !important;
+            font-size: 6px !important;
             min-height: auto !important;
-            padding: 4px !important;
+            padding: 1px !important;
+            width: 100% !important;
+            resize: none !important;
+            font-family: Arial, sans-serif !important;
+            line-height: 1.1 !important;
+          }
+          
+          .hazard-large-text-area {
+            min-height: 60px !important;
+            max-height: 60px !important;
+          }
+          
+          /* Compact layout for print */
+          .print-compact-row {
+            height: 25px !important;
+          }
+          
+          .print-compact-rigging {
+            height: 180px !important;
+          }
+          
+          .print-compact-rescue {
+            height: 160px !important;
+          }
+          
+          /* Hide overflow content for print */
+          .hazard-text-input {
+            overflow: hidden !important;
+          }
+          
+          /* Ensure single page */
+          @page {
+            size: letter !important;
+            margin: 0.25in !important;
+          }
+          
+          .hazard-container {
+            page-break-inside: avoid !important;
+          }
+          
+          .hazard-form-section:last-child {
+            margin-bottom: 0 !important;
           }
         }
       `}</style>
@@ -433,7 +589,7 @@ export default function HazardAnalysis() {
               </tr>
             </thead>
             <tbody>
-              <tr>
+              <tr className="print-compact-row">
                 <td className="hazard-methods-column">Appropriate equipment</td>
                 <td className="hazard-comments-column">
                   <input
@@ -452,7 +608,7 @@ export default function HazardAnalysis() {
                   />
                 </td>
               </tr>
-              <tr>
+              <tr className="print-compact-row">
                 <td className="hazard-methods-column">Rope transfers</td>
                 <td className="hazard-comments-column">
                   <input
@@ -471,7 +627,7 @@ export default function HazardAnalysis() {
                   />
                 </td>
               </tr>
-              <tr>
+              <tr className="print-compact-row">
                 <td className="hazard-methods-column">Deviation/Re-Anchor/Passing-Knots</td>
                 <td className="hazard-comments-column">
                   <input
@@ -490,7 +646,7 @@ export default function HazardAnalysis() {
                   />
                 </td>
               </tr>
-              <tr>
+              <tr className="print-compact-row">
                 <td className="hazard-methods-column">Walking Aid Climbing / Pipe Rack</td>
                 <td className="hazard-comments-column">
                   <input
@@ -509,7 +665,7 @@ export default function HazardAnalysis() {
                   />
                 </td>
               </tr>
-              <tr>
+              <tr className="print-compact-row">
                 <td className="hazard-methods-column">Suspended Aid Climbing</td>
                 <td className="hazard-comments-column">
                   <input
@@ -528,7 +684,7 @@ export default function HazardAnalysis() {
         </div>
 
         {/* Rigging Section */}
-        <div className="hazard-form-section">
+        <div className="hazard-form-section print-compact-rigging">
           <div className="hazard-section-header">RIGGING</div>
           <table className="hazard-form-table">
             <thead>
@@ -829,7 +985,7 @@ export default function HazardAnalysis() {
         </div>
 
         {/* Rescue Section */}
-        <div className="hazard-form-section">
+        <div className="hazard-form-section print-compact-rescue">
           <div className="hazard-section-header">ROPE ACCESS RIGGING & RESCUE</div>
           <table className="hazard-form-table">
             <thead>
@@ -969,10 +1125,10 @@ export default function HazardAnalysis() {
                 </td>
               </tr>
               <tr>
-                <td colSpan={4} style={{ height: '300px', verticalAlign: 'top' }}>
+                <td colSpan={4} style={{ height: '100px', verticalAlign: 'top' }}>
                   <textarea
                     className="hazard-text-input hazard-large-text-area"
-                    style={{ height: '280px' }}
+                    style={{ height: '90px' }}
                     placeholder="Describe rescue plan or attach diagram"
                     value={formData.rescuePlan}
                     onChange={(e) => updateField('rescuePlan', e.target.value)}
