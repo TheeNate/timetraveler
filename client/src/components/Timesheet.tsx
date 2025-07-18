@@ -69,12 +69,37 @@ export default function Timesheet() {
 
   const [techCounter, setTechCounter] = useState(0);
   const [jobCounter, setJobCounter] = useState(0);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
 
   // Initialize with one technician and job detail
   useEffect(() => {
     addTechnician();
     addJobDetail();
     loadSavedData();
+    
+    // Listen for online/offline events
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Listen for PWA install prompt
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+    
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   // Auto-save functionality
@@ -444,6 +469,17 @@ export default function Timesheet() {
 
 
 
+  const installPWA = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setShowInstallButton(false);
+        setDeferredPrompt(null);
+      }
+    }
+  };
+
   const printTimesheet = () => {
     window.print();
   };
@@ -453,7 +489,52 @@ export default function Timesheet() {
       <div className="timesheet-container">
         {/* Header */}
         <div className="timesheet-header">
-          <h1>CORDA VERTICAL TRAVELER</h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <h1>CORDA VERTICAL TRAVELER</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {showInstallButton && (
+                <button
+                  onClick={installPWA}
+                  style={{
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📱 Install App
+                </button>
+              )}
+              {!isOnline && (
+                <span style={{ 
+                  background: '#ef4444', 
+                  color: 'white', 
+                  padding: '4px 8px', 
+                  borderRadius: '4px', 
+                  fontSize: '12px',
+                  fontWeight: '600'
+                }}>
+                  📶 OFFLINE
+                </span>
+              )}
+              {isOnline && (
+                <span style={{ 
+                  background: '#10b981', 
+                  color: 'white', 
+                  padding: '4px 8px', 
+                  borderRadius: '4px', 
+                  fontSize: '12px',
+                  fontWeight: '600'
+                }}>
+                  ✓ ONLINE
+                </span>
+              )}
+            </div>
+          </div>
           <div className="timesheet-header-info">
             <div className="timesheet-info-card">
               <label className="timesheet-label">Date:</label>
