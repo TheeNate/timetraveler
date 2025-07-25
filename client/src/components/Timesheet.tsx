@@ -13,7 +13,17 @@ interface Technician {
     sat: number;
     sun: number;
   };
+  travelHours: {
+    mon: number;
+    tue: number;
+    wed: number;
+    thu: number;
+    fri: number;
+    sat: number;
+    sun: number;
+  };
   total: number;
+  travelTotal: number;
 }
 
 interface JobDetail {
@@ -76,6 +86,19 @@ export default function Timesheet() {
 
   // Initialize with one technician and job detail
   useEffect(() => {
+    // Clear old data that might not have the new structure
+    if (localStorage.getItem('timesheetData')) {
+      const savedData = localStorage.getItem('timesheetData');
+      try {
+        const data = JSON.parse(savedData!);
+        if (data.technicians && data.technicians[0] && !data.technicians[0].travelHours) {
+          localStorage.removeItem('timesheetData');
+        }
+      } catch (e) {
+        localStorage.removeItem('timesheetData');
+      }
+    }
+    
     addTechnician();
     addJobDetail();
     loadSavedData();
@@ -124,12 +147,24 @@ export default function Timesheet() {
     if (savedData) {
       try {
         const data = JSON.parse(savedData);
-        if (data.technicians) setTechnicians(data.technicians);
-        if (data.jobDetails) setJobDetails(data.jobDetails);
+        
+        // Migrate old technician data to include travelHours if missing
+        if (data.technicians) {
+          const migratedTechnicians = data.technicians.map((tech: any) => ({
+            ...tech,
+            travelHours: tech.travelHours || { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
+            travelTotal: tech.travelTotal || 0
+          }));
+          setTechnicians(migratedTechnicians);
+          setTechCounter(migratedTechnicians.length);
+        }
+        
+        if (data.jobDetails) {
+          setJobDetails(data.jobDetails);
+          setJobCounter(data.jobDetails.length);
+        }
         if (data.travelHours) setTravelHours(data.travelHours);
         if (data.timesheetData) setTimesheetData(data.timesheetData);
-        if (data.technicians) setTechCounter(data.technicians.length);
-        if (data.jobDetails) setJobCounter(data.jobDetails.length);
       } catch (error) {
         console.error('Error loading saved data:', error);
       }
@@ -142,7 +177,9 @@ export default function Timesheet() {
       id: newId,
       name: '',
       hours: { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
-      total: 0
+      travelHours: { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
+      total: 0,
+      travelTotal: 0
     };
     setTechnicians(prev => [...prev, newTech]);
     setTechCounter(prev => prev + 1);
@@ -170,6 +207,17 @@ export default function Timesheet() {
         const newHours = { ...tech.hours, [day]: hours };
         const total = Object.values(newHours).reduce((sum, h) => sum + h, 0);
         return { ...tech, hours: newHours, total };
+      }
+      return tech;
+    }));
+  };
+
+  const updateTechnicianTravelHours = (id: string, day: keyof TravelHours, hours: number) => {
+    setTechnicians(prev => prev.map(tech => {
+      if (tech.id === id) {
+        const newTravelHours = { ...tech.travelHours, [day]: hours };
+        const travelTotal = Object.values(newTravelHours).reduce((sum, h) => sum + h, 0);
+        return { ...tech, travelHours: newTravelHours, travelTotal };
       }
       return tech;
     }));
@@ -208,7 +256,7 @@ export default function Timesheet() {
 
   // Calculate totals
   const totalRegularHours = technicians.reduce((sum, tech) => sum + tech.total, 0);
-  const totalTravelHours = Object.values(travelHours).reduce((sum, hours) => sum + hours, 0);
+  const totalTravelHours = technicians.reduce((sum, tech) => sum + tech.travelTotal, 0);
   const grandTotalHours = totalRegularHours + totalTravelHours;
   const totalTechnicians = technicians.filter(tech => tech.total > 0).length;
 
@@ -346,17 +394,19 @@ export default function Timesheet() {
 
                 <div class="travel-section">
                     <div class="travel-header">Travel Time</div>
+                    ${technicians.map(tech => `
                     <div class="time-grid">
-                        <div style="font-weight: 600; color: #92400e;">Travel Hours</div>
-                        <div class="time-cell">${travelHours.mon || '0'}</div>
-                        <div class="time-cell">${travelHours.tue || '0'}</div>
-                        <div class="time-cell">${travelHours.wed || '0'}</div>
-                        <div class="time-cell">${travelHours.thu || '0'}</div>
-                        <div class="time-cell">${travelHours.fri || '0'}</div>
-                        <div class="time-cell">${travelHours.sat || '0'}</div>
-                        <div class="time-cell">${travelHours.sun || '0'}</div>
-                        <div class="total-cell">${totalTravelHours.toFixed(1)}</div>
+                        <div style="font-weight: 600; color: #92400e;">${tech.name || 'Unnamed'} (Travel)</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.mon || '0'}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.tue || '0'}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.wed || '0'}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.thu || '0'}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.fri || '0'}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.sat || '0'}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.sun || '0'}</div>
+                        <div class="total-cell" style="color: #92400e;">${tech.travelTotal.toFixed(1)}</div>
                     </div>
+                    `).join('')}
                 </div>
             </div>
 
@@ -566,25 +616,40 @@ export default function Timesheet() {
     yPosition += 3;
     doc.setFont("helvetica", "bold");
     doc.text("TRAVEL TIME", margin, yPosition);
+    yPosition += 8;
+
+    // Travel time headers
+    doc.setFontSize(8);
+    headers.forEach((header, index) => {
+      doc.text(header, margin + index * colWidth, yPosition);
+    });
     yPosition += 5;
 
+    // Draw travel header line
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 3;
+
+    // Travel time rows for each technician
     doc.setFont("helvetica", "normal");
-    const travelData = [
-      "Travel",
-      travelHours.mon.toString(),
-      travelHours.tue.toString(),
-      travelHours.wed.toString(),
-      travelHours.thu.toString(),
-      travelHours.fri.toString(),
-      travelHours.sat.toString(),
-      travelHours.sun.toString(),
-      totalTravelHours.toFixed(1)
-    ];
-    
-    travelData.forEach((data, index) => {
-      doc.text(data, margin + index * colWidth, yPosition);
+    technicians.forEach((tech) => {
+      const travelData = [
+        (tech.name || "Unnamed") + " (Travel)",
+        tech.travelHours.mon.toString(),
+        tech.travelHours.tue.toString(),
+        tech.travelHours.wed.toString(),
+        tech.travelHours.thu.toString(),
+        tech.travelHours.fri.toString(),
+        tech.travelHours.sat.toString(),
+        tech.travelHours.sun.toString(),
+        tech.travelTotal.toFixed(1)
+      ];
+      
+      travelData.forEach((data, index) => {
+        doc.text(data, margin + index * colWidth, yPosition);
+      });
+      yPosition += 5;
     });
-    yPosition += 10;
+    yPosition += 5;
 
     // Summary
     doc.setFont("helvetica", "bold");
@@ -868,22 +933,46 @@ export default function Timesheet() {
             {/* Travel Time Section */}
             <div className="timesheet-travel-section">
               <h4 style={{ marginBottom: '15px', color: '#92400e' }}>Travel Time</h4>
-              <div className="timesheet-travel-grid">
-                <div style={{ fontWeight: '600', color: '#92400e' }}>Travel Hours</div>
-                {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((day) => (
-                  <input
-                    key={day}
-                    type="number"
-                    step="0.5"
-                    min="0"
-                    className="timesheet-time-input"
-                    value={travelHours[day] || ''}
-                    onChange={(e) => updateTravelHours(day, parseFloat(e.target.value) || 0)}
-                  />
-                ))}
+              
+              {/* Travel Header Row */}
+              <div className="timesheet-time-grid">
+                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Technician</div>
+                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Mon</div>
+                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Tue</div>
+                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Wed</div>
+                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Thu</div>
+                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Fri</div>
+                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Sat</div>
+                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Sun</div>
+                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Total</div>
               </div>
+
+              {/* Travel Time Rows - one for each technician */}
+              {technicians.map((tech) => (
+                <div key={`travel-${tech.id}`} className="timesheet-time-grid">
+                  <div className="timesheet-tech-name" style={{ color: '#92400e', fontWeight: '600' }}>
+                    {tech.name || 'Unnamed'} (Travel)
+                  </div>
+                  {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((day) => (
+                    <input
+                      key={day}
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      className="timesheet-time-input"
+                      style={{ borderColor: '#92400e' }}
+                      value={tech.travelHours[day] || ''}
+                      onChange={(e) => updateTechnicianTravelHours(tech.id, day, parseFloat(e.target.value) || 0)}
+                    />
+                  ))}
+                  <div className="timesheet-total-cell" style={{ color: '#92400e' }}>
+                    {tech.travelTotal.toFixed(1)}
+                  </div>
+                </div>
+              ))}
+              
               <div style={{ marginTop: '10px', textAlign: 'right', fontWeight: '600', color: '#92400e' }}>
-                Total Travel: {totalTravelHours.toFixed(1)} hours
+                Total Travel: {technicians.reduce((sum, tech) => sum + tech.travelTotal, 0).toFixed(1)} hours
               </div>
             </div>
           </div>
