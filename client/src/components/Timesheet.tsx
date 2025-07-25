@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import jsPDF from 'jspdf';
+import jsPDF from "jspdf";
 
 interface Technician {
   id: string;
@@ -62,20 +62,26 @@ export default function Timesheet() {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [jobDetails, setJobDetails] = useState<JobDetail[]>([]);
   const [travelHours, setTravelHours] = useState<TravelHours>({
-    mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0
+    mon: 0,
+    tue: 0,
+    wed: 0,
+    thu: 0,
+    fri: 0,
+    sat: 0,
+    sun: 0,
   });
   const [timesheetData, setTimesheetData] = useState<TimesheetData>({
     date: new Date().toISOString().slice(0, 10),
-    jobNumber: '',
-    woNumber: '',
-    coNumber: '',
-    client: '',
-    billingAddress: '',
-    location: '',
-    contact: '',
-    contactPhone: '',
-    jobDescription: '',
-    notes: ''
+    jobNumber: "",
+    woNumber: "",
+    coNumber: "",
+    client: "",
+    billingAddress: "",
+    location: "",
+    contact: "",
+    contactPhone: "",
+    jobDescription: "",
+    notes: "",
   });
 
   const [techCounter, setTechCounter] = useState(0);
@@ -87,42 +93,49 @@ export default function Timesheet() {
   // Initialize with one technician and job detail
   useEffect(() => {
     // Clear old data that might not have the new structure
-    if (localStorage.getItem('timesheetData')) {
-      const savedData = localStorage.getItem('timesheetData');
+    if (localStorage.getItem("timesheetData")) {
+      const savedData = localStorage.getItem("timesheetData");
       try {
         const data = JSON.parse(savedData!);
-        if (data.technicians && data.technicians[0] && !data.technicians[0].travelHours) {
-          localStorage.removeItem('timesheetData');
+        if (
+          data.technicians &&
+          data.technicians[0] &&
+          !data.technicians[0].travelHours
+        ) {
+          localStorage.removeItem("timesheetData");
         }
       } catch (e) {
-        localStorage.removeItem('timesheetData');
+        localStorage.removeItem("timesheetData");
       }
     }
-    
+
     addTechnician();
     addJobDetail();
     loadSavedData();
-    
+
     // Listen for online/offline events
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
     // Listen for PWA install prompt
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallButton(true);
     };
-    
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
     };
   }, []);
 
@@ -133,9 +146,9 @@ export default function Timesheet() {
         technicians,
         jobDetails,
         travelHours,
-        timesheetData
+        timesheetData,
       };
-      localStorage.setItem('timesheetData', JSON.stringify(data));
+      localStorage.setItem("timesheetData", JSON.stringify(data));
     };
 
     const interval = setInterval(autoSave, 30000);
@@ -143,22 +156,30 @@ export default function Timesheet() {
   }, [technicians, jobDetails, travelHours, timesheetData]);
 
   const loadSavedData = () => {
-    const savedData = localStorage.getItem('timesheetData');
+    const savedData = localStorage.getItem("timesheetData");
     if (savedData) {
       try {
         const data = JSON.parse(savedData);
-        
+
         // Migrate old technician data to include travelHours if missing
         if (data.technicians) {
           const migratedTechnicians = data.technicians.map((tech: any) => ({
             ...tech,
-            travelHours: tech.travelHours || { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
-            travelTotal: tech.travelTotal || 0
+            travelHours: tech.travelHours || {
+              mon: 0,
+              tue: 0,
+              wed: 0,
+              thu: 0,
+              fri: 0,
+              sat: 0,
+              sun: 0,
+            },
+            travelTotal: tech.travelTotal || 0,
           }));
           setTechnicians(migratedTechnicians);
           setTechCounter(migratedTechnicians.length);
         }
-        
+
         if (data.jobDetails) {
           setJobDetails(data.jobDetails);
           setJobCounter(data.jobDetails.length);
@@ -166,7 +187,7 @@ export default function Timesheet() {
         if (data.travelHours) setTravelHours(data.travelHours);
         if (data.timesheetData) setTimesheetData(data.timesheetData);
       } catch (error) {
-        console.error('Error loading saved data:', error);
+        console.error("Error loading saved data:", error);
       }
     }
   };
@@ -175,96 +196,121 @@ export default function Timesheet() {
     const newId = `tech-${techCounter + 1}`;
     const newTech: Technician = {
       id: newId,
-      name: '',
+      name: "",
       hours: { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
       travelHours: { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
       total: 0,
-      travelTotal: 0
+      travelTotal: 0,
     };
-    setTechnicians(prev => [...prev, newTech]);
-    setTechCounter(prev => prev + 1);
+    setTechnicians((prev) => [...prev, newTech]);
+    setTechCounter((prev) => prev + 1);
   };
 
   const removeTechnician = (id: string) => {
     if (technicians.length <= 1) {
-      alert('You must have at least one technician.');
+      alert("You must have at least one technician.");
       return;
     }
-    if (confirm('Are you sure you want to remove this technician?')) {
-      setTechnicians(prev => prev.filter(tech => tech.id !== id));
+    if (confirm("Are you sure you want to remove this technician?")) {
+      setTechnicians((prev) => prev.filter((tech) => tech.id !== id));
     }
   };
 
   const updateTechnicianName = (id: string, name: string) => {
-    setTechnicians(prev => prev.map(tech => 
-      tech.id === id ? { ...tech, name } : tech
-    ));
+    setTechnicians((prev) =>
+      prev.map((tech) => (tech.id === id ? { ...tech, name } : tech)),
+    );
   };
 
-  const updateTechnicianHours = (id: string, day: keyof TravelHours, hours: number) => {
-    setTechnicians(prev => prev.map(tech => {
-      if (tech.id === id) {
-        const newHours = { ...tech.hours, [day]: hours };
-        const total = Object.values(newHours).reduce((sum, h) => sum + h, 0);
-        return { ...tech, hours: newHours, total };
-      }
-      return tech;
-    }));
+  const updateTechnicianHours = (
+    id: string,
+    day: keyof TravelHours,
+    hours: number,
+  ) => {
+    setTechnicians((prev) =>
+      prev.map((tech) => {
+        if (tech.id === id) {
+          const newHours = { ...tech.hours, [day]: hours };
+          const total = Object.values(newHours).reduce((sum, h) => sum + h, 0);
+          return { ...tech, hours: newHours, total };
+        }
+        return tech;
+      }),
+    );
   };
 
-  const updateTechnicianTravelHours = (id: string, day: keyof TravelHours, hours: number) => {
-    setTechnicians(prev => prev.map(tech => {
-      if (tech.id === id) {
-        const newTravelHours = { ...tech.travelHours, [day]: hours };
-        const travelTotal = Object.values(newTravelHours).reduce((sum, h) => sum + h, 0);
-        return { ...tech, travelHours: newTravelHours, travelTotal };
-      }
-      return tech;
-    }));
+  const updateTechnicianTravelHours = (
+    id: string,
+    day: keyof TravelHours,
+    hours: number,
+  ) => {
+    setTechnicians((prev) =>
+      prev.map((tech) => {
+        if (tech.id === id) {
+          const newTravelHours = { ...tech.travelHours, [day]: hours };
+          const travelTotal = Object.values(newTravelHours).reduce(
+            (sum, h) => sum + h,
+            0,
+          );
+          return { ...tech, travelHours: newTravelHours, travelTotal };
+        }
+        return tech;
+      }),
+    );
   };
 
   const updateTravelHours = (day: keyof TravelHours, hours: number) => {
-    setTravelHours(prev => ({ ...prev, [day]: hours }));
+    setTravelHours((prev) => ({ ...prev, [day]: hours }));
   };
 
   const addJobDetail = () => {
     const newId = `job-${jobCounter + 1}`;
     const newJob: JobDetail = {
       id: newId,
-      workDescription: '',
-      equipment: '',
-      materials: '',
-      quantity: 0
+      workDescription: "",
+      equipment: "",
+      materials: "",
+      quantity: 0,
     };
-    setJobDetails(prev => [...prev, newJob]);
-    setJobCounter(prev => prev + 1);
+    setJobDetails((prev) => [...prev, newJob]);
+    setJobCounter((prev) => prev + 1);
   };
 
   const removeJobDetail = (id: string) => {
-    setJobDetails(prev => prev.filter(job => job.id !== id));
+    setJobDetails((prev) => prev.filter((job) => job.id !== id));
   };
 
-  const updateJobDetail = (id: string, field: keyof JobDetail, value: string | number) => {
-    setJobDetails(prev => prev.map(job =>
-      job.id === id ? { ...job, [field]: value } : job
-    ));
+  const updateJobDetail = (
+    id: string,
+    field: keyof JobDetail,
+    value: string | number,
+  ) => {
+    setJobDetails((prev) =>
+      prev.map((job) => (job.id === id ? { ...job, [field]: value } : job)),
+    );
   };
 
   const updateTimesheetData = (field: keyof TimesheetData, value: string) => {
-    setTimesheetData(prev => ({ ...prev, [field]: value }));
+    setTimesheetData((prev) => ({ ...prev, [field]: value }));
   };
 
   // Calculate totals
-  const totalRegularHours = technicians.reduce((sum, tech) => sum + tech.total, 0);
-  const totalTravelHours = technicians.reduce((sum, tech) => sum + tech.travelTotal, 0);
+  const totalRegularHours = technicians.reduce(
+    (sum, tech) => sum + tech.total,
+    0,
+  );
+  const totalTravelHours = technicians.reduce(
+    (sum, tech) => sum + tech.travelTotal,
+    0,
+  );
   const grandTotalHours = totalRegularHours + totalTravelHours;
-  const totalTechnicians = technicians.filter(tech => tech.total > 0).length;
+  const totalTechnicians = technicians.filter((tech) => tech.total > 0).length;
 
   const saveCopy = () => {
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 10);
-    const timeStr = now.toTimeString().slice(0, 5).replace(':', '');
-    const jobNum = timesheetData.jobNumber || 'NoJob';
+    const timeStr = now.toTimeString().slice(0, 5).replace(":", "");
+    const jobNum = timesheetData.jobNumber || "NoJob";
     const filename = `Timesheet_${jobNum}_${dateStr}_${timeStr}.html`;
 
     // Create a complete HTML document with inline styles
@@ -273,7 +319,7 @@ export default function Timesheet() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Corda Vertical Traveler Timesheet - ${timesheetData.jobNumber || 'Job'} - ${timesheetData.date}</title>
+    <title>Corda Vertical Traveler Timesheet - ${timesheetData.jobNumber || "Job"} - ${timesheetData.date}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; padding: 20px; line-height: 1.6; }
@@ -342,11 +388,11 @@ export default function Timesheet() {
                     </div>
                     <div class="form-group">
                         <label>Billing Address:</label>
-                        <div class="form-value">${timesheetData.billingAddress.replace(/\n/g, '<br>')}</div>
+                        <div class="form-value">${timesheetData.billingAddress.replace(/\n/g, "<br>")}</div>
                     </div>
                     <div class="form-group">
                         <label>Location:</label>
-                        <div class="form-value">${timesheetData.location.replace(/\n/g, '<br>')}</div>
+                        <div class="form-value">${timesheetData.location.replace(/\n/g, "<br>")}</div>
                     </div>
                     <div class="form-group">
                         <label>Contact:</label>
@@ -365,7 +411,7 @@ export default function Timesheet() {
 
             <div class="section">
                 <div class="section-title">Time Tracking</div>
-                
+
                 <div class="time-grid">
                     <div class="time-header">Technician</div>
                     <div class="time-header">Mon</div>
@@ -378,39 +424,49 @@ export default function Timesheet() {
                     <div class="time-header">Total</div>
                 </div>
 
-                ${technicians.map(tech => `
+                ${technicians
+                  .map(
+                    (tech) => `
                 <div class="time-grid">
-                    <div class="tech-name">${tech.name || 'Unnamed Technician'}</div>
-                    <div class="time-cell">${tech.hours.mon || '0'}</div>
-                    <div class="time-cell">${tech.hours.tue || '0'}</div>
-                    <div class="time-cell">${tech.hours.wed || '0'}</div>
-                    <div class="time-cell">${tech.hours.thu || '0'}</div>
-                    <div class="time-cell">${tech.hours.fri || '0'}</div>
-                    <div class="time-cell">${tech.hours.sat || '0'}</div>
-                    <div class="time-cell">${tech.hours.sun || '0'}</div>
+                    <div class="tech-name">${tech.name || "Unnamed Technician"}</div>
+                    <div class="time-cell">${tech.hours.mon || "0"}</div>
+                    <div class="time-cell">${tech.hours.tue || "0"}</div>
+                    <div class="time-cell">${tech.hours.wed || "0"}</div>
+                    <div class="time-cell">${tech.hours.thu || "0"}</div>
+                    <div class="time-cell">${tech.hours.fri || "0"}</div>
+                    <div class="time-cell">${tech.hours.sat || "0"}</div>
+                    <div class="time-cell">${tech.hours.sun || "0"}</div>
                     <div class="total-cell">${tech.total.toFixed(1)}</div>
                 </div>
-                `).join('')}
+                `,
+                  )
+                  .join("")}
 
                 <div class="travel-section">
                     <div class="travel-header">Travel Time</div>
-                    ${technicians.map(tech => `
+                    ${technicians
+                      .map(
+                        (tech) => `
                     <div class="time-grid">
-                        <div style="font-weight: 600; color: #92400e;">${tech.name || 'Unnamed'} (Travel)</div>
-                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.mon || '0'}</div>
-                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.tue || '0'}</div>
-                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.wed || '0'}</div>
-                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.thu || '0'}</div>
-                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.fri || '0'}</div>
-                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.sat || '0'}</div>
-                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.sun || '0'}</div>
+                        <div style="font-weight: 600; color: #92400e;">${tech.name || "Unnamed"} (Travel)</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.mon || "0"}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.tue || "0"}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.wed || "0"}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.thu || "0"}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.fri || "0"}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.sat || "0"}</div>
+                        <div class="time-cell" style="color: #92400e;">${tech.travelHours.sun || "0"}</div>
                         <div class="total-cell" style="color: #92400e;">${tech.travelTotal.toFixed(1)}</div>
                     </div>
-                    `).join('')}
+                    `,
+                      )
+                      .join("")}
                 </div>
             </div>
 
-            ${jobDetails.length > 0 ? `
+            ${
+              jobDetails.length > 0
+                ? `
             <div class="section">
                 <div class="section-title">Job Details & Equipment</div>
                 <table class="job-table">
@@ -423,18 +479,24 @@ export default function Timesheet() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${jobDetails.map(job => `
+                        ${jobDetails
+                          .map(
+                            (job) => `
                         <tr>
                             <td>${job.workDescription}</td>
                             <td>${job.equipment}</td>
                             <td>${job.materials}</td>
                             <td>${job.quantity}</td>
                         </tr>
-                        `).join('')}
+                        `,
+                          )
+                          .join("")}
                     </tbody>
                 </table>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
 
             <div class="summary-cards">
                 <div class="summary-card">
@@ -455,12 +517,16 @@ export default function Timesheet() {
                 </div>
             </div>
 
-            ${timesheetData.notes ? `
+            ${
+              timesheetData.notes
+                ? `
             <div class="section">
                 <div class="section-title">Notes</div>
-                <div class="form-value">${timesheetData.notes.replace(/\n/g, '<br>')}</div>
+                <div class="form-value">${timesheetData.notes.replace(/\n/g, "<br>")}</div>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
 
             <div class="signature-section">
                 <div class="signature-box">
@@ -477,9 +543,9 @@ export default function Timesheet() {
 </body>
 </html>`;
 
-    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const blob = new Blob([htmlContent], { type: "text/html" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     a.click();
@@ -489,27 +555,39 @@ export default function Timesheet() {
   };
 
   const clearForm = () => {
-    if (confirm('Are you sure you want to clear all data and start a new timesheet?')) {
+    if (
+      confirm(
+        "Are you sure you want to clear all data and start a new timesheet?",
+      )
+    ) {
       setTechnicians([]);
       setJobDetails([]);
-      setTravelHours({ mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 });
+      setTravelHours({
+        mon: 0,
+        tue: 0,
+        wed: 0,
+        thu: 0,
+        fri: 0,
+        sat: 0,
+        sun: 0,
+      });
       setTimesheetData({
         date: new Date().toISOString().slice(0, 10),
-        jobNumber: '',
-        woNumber: '',
-        coNumber: '',
-        client: '',
-        billingAddress: '',
-        location: '',
-        contact: '',
-        contactPhone: '',
-        jobDescription: '',
-        notes: ''
+        jobNumber: "",
+        woNumber: "",
+        coNumber: "",
+        client: "",
+        billingAddress: "",
+        location: "",
+        contact: "",
+        contactPhone: "",
+        jobDescription: "",
+        notes: "",
       });
       setTechCounter(0);
       setJobCounter(0);
-      localStorage.removeItem('timesheetData');
-      
+      localStorage.removeItem("timesheetData");
+
       // Re-add initial items
       setTimeout(() => {
         addTechnician();
@@ -518,13 +596,11 @@ export default function Timesheet() {
     }
   };
 
-
-
   const installPWA = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
+      if (outcome === "accepted") {
         setShowInstallButton(false);
         setDeferredPrompt(null);
       }
@@ -542,7 +618,9 @@ export default function Timesheet() {
     // Header
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("CORDA VERTICAL TRAVELER", pageWidth / 2, yPosition, { align: "center" });
+    doc.text("CORDA VERTICAL TRAVELER", pageWidth / 2, yPosition, {
+      align: "center",
+    });
     yPosition += 10;
 
     doc.setFontSize(14);
@@ -561,7 +639,10 @@ export default function Timesheet() {
       [`Date: ${timesheetData.date}`, `Job #: ${timesheetData.jobNumber}`],
       [`WO #: ${timesheetData.woNumber}`, `CO #: ${timesheetData.coNumber}`],
       [`Client: ${timesheetData.client}`, `Contact: ${timesheetData.contact}`],
-      [`Location: ${timesheetData.location}`, `Phone: ${timesheetData.contactPhone}`]
+      [
+        `Location: ${timesheetData.location}`,
+        `Phone: ${timesheetData.contactPhone}`,
+      ],
     ];
 
     jobInfo.forEach(([left, right]) => {
@@ -579,8 +660,18 @@ export default function Timesheet() {
 
     // Table headers
     const colWidth = contentWidth / 9;
-    const headers = ["Technician", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Total"];
-    
+    const headers = [
+      "Technician",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun",
+      "Total",
+    ];
+
     doc.setFontSize(8);
     headers.forEach((header, index) => {
       doc.text(header, margin + index * colWidth, yPosition);
@@ -593,7 +684,7 @@ export default function Timesheet() {
 
     // Technician rows
     doc.setFont("helvetica", "normal");
-    technicians.forEach((tech) => {
+    technicians.forEach((tech, techIndex) => {
       const rowData = [
         tech.name || "Unnamed",
         tech.hours.mon.toString(),
@@ -603,17 +694,23 @@ export default function Timesheet() {
         tech.hours.fri.toString(),
         tech.hours.sat.toString(),
         tech.hours.sun.toString(),
-        tech.total.toFixed(1)
+        tech.total.toFixed(1),
       ];
-      
+
       rowData.forEach((data, index) => {
         doc.text(data, margin + index * colWidth, yPosition);
       });
       yPosition += 5;
+
+      // Add border line between workers (except after the last one)
+      if (techIndex < technicians.length - 1) {
+        doc.setDrawColor(200, 200, 200); // Light gray color
+        doc.line(margin, yPosition - 8, pageWidth - margin, yPosition - 8);
+      }
     });
 
     // Travel time
-    yPosition += 3;
+    yPosition += 8;
     doc.setFont("helvetica", "bold");
     doc.text("TRAVEL TIME", margin, yPosition);
     yPosition += 8;
@@ -627,11 +724,11 @@ export default function Timesheet() {
 
     // Draw travel header line
     doc.line(margin, yPosition, pageWidth - margin, yPosition);
-    yPosition += 3;
+    yPosition += 8;
 
     // Travel time rows for each technician
     doc.setFont("helvetica", "normal");
-    technicians.forEach((tech) => {
+    technicians.forEach((tech, techIndex) => {
       const travelData = [
         (tech.name || "Unnamed") + " (Travel)",
         tech.travelHours.mon.toString(),
@@ -641,15 +738,21 @@ export default function Timesheet() {
         tech.travelHours.fri.toString(),
         tech.travelHours.sat.toString(),
         tech.travelHours.sun.toString(),
-        tech.travelTotal.toFixed(1)
+        tech.travelTotal.toFixed(1),
       ];
-      
+
       travelData.forEach((data, index) => {
         doc.text(data, margin + index * colWidth, yPosition);
       });
       yPosition += 5;
+
+      // Add border line between workers (except after the last one)
+      if (techIndex < technicians.length - 1) {
+        doc.setDrawColor(200, 200, 200); // Light gray color
+        doc.line(margin, yPosition - 8, pageWidth - margin, yPosition - 8);
+      }
     });
-    yPosition += 5;
+    yPosition += 8;
 
     // Summary
     doc.setFont("helvetica", "bold");
@@ -657,8 +760,16 @@ export default function Timesheet() {
     yPosition += 8;
 
     doc.setFont("helvetica", "normal");
-    doc.text(`Regular Hours: ${totalRegularHours.toFixed(1)}`, margin, yPosition);
-    doc.text(`Travel Hours: ${totalTravelHours.toFixed(1)}`, pageWidth / 2, yPosition);
+    doc.text(
+      `Regular Hours: ${totalRegularHours.toFixed(1)}`,
+      margin,
+      yPosition,
+    );
+    doc.text(
+      `Travel Hours: ${totalTravelHours.toFixed(1)}`,
+      pageWidth / 2,
+      yPosition,
+    );
     yPosition += 6;
     doc.text(`Total Hours: ${grandTotalHours.toFixed(1)}`, margin, yPosition);
     doc.text(`Technicians: ${totalTechnicians}`, pageWidth / 2, yPosition);
@@ -673,14 +784,16 @@ export default function Timesheet() {
       doc.setFont("helvetica", "normal");
       jobDetails.forEach((job, index) => {
         if (yPosition > pageHeight - 30) return; // Stop if near page bottom
-        
+
         const details = [
-          job.equipment ? `Equipment: ${job.equipment}` : '',
-          job.workDescription ? `Description: ${job.workDescription}` : '',
-          job.materials ? `Materials: ${job.materials}` : '',
-          job.quantity ? `Quantity: ${job.quantity}` : ''
-        ].filter(Boolean).join(' | ');
-        
+          job.equipment ? `Equipment: ${job.equipment}` : "",
+          job.workDescription ? `Description: ${job.workDescription}` : "",
+          job.materials ? `Materials: ${job.materials}` : "",
+          job.quantity ? `Quantity: ${job.quantity}` : "",
+        ]
+          .filter(Boolean)
+          .join(" | ");
+
         if (details) {
           doc.text(`${index + 1}. ${details}`, margin, yPosition);
           yPosition += 5;
@@ -696,7 +809,7 @@ export default function Timesheet() {
       yPosition += 8;
 
       doc.setFont("helvetica", "normal");
-      const notes = timesheetData.notes.split('\n');
+      const notes = timesheetData.notes.split("\n");
       notes.forEach((note) => {
         if (yPosition > pageHeight - 20) return;
         doc.text(note, margin, yPosition);
@@ -707,8 +820,13 @@ export default function Timesheet() {
     // Signature lines at bottom
     const signatureY = pageHeight - 40;
     doc.line(margin, signatureY, margin + 80, signatureY);
-    doc.line(pageWidth - margin - 80, signatureY, pageWidth - margin, signatureY);
-    
+    doc.line(
+      pageWidth - margin - 80,
+      signatureY,
+      pageWidth - margin,
+      signatureY,
+    );
+
     doc.setFontSize(8);
     doc.text("Technician Signature", margin, signatureY + 5);
     doc.text("Date: ___________", margin, signatureY + 10);
@@ -716,56 +834,74 @@ export default function Timesheet() {
     doc.text("Date: ___________", pageWidth - margin - 80, signatureY + 10);
 
     // Save the PDF
-    const filename = `Timesheet_${timesheetData.jobNumber || 'NoJob'}_${timesheetData.date}.pdf`;
+    const filename = `Timesheet_${timesheetData.jobNumber || "NoJob"}_${timesheetData.date}.pdf`;
     doc.save(filename);
   };
 
   return (
-    <div style={{ fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", background: '#f5f7fa', padding: '20px', lineHeight: '1.6' }}>
+    <div
+      style={{
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        background: "#f5f7fa",
+        padding: "20px",
+        lineHeight: "1.6",
+      }}
+    >
       <div className="timesheet-container">
         {/* Header */}
         <div className="timesheet-header">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "10px",
+            }}
+          >
             <h1>CORDA VERTICAL TRAVELER</h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               {showInstallButton && (
                 <button
                   onClick={installPWA}
                   style={{
-                    background: '#3b82f6',
-                    color: 'white',
-                    border: 'none',
-                    padding: '6px 12px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
+                    background: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    padding: "6px 12px",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    cursor: "pointer",
                   }}
                 >
                   📱 Install App
                 </button>
               )}
               {!isOnline && (
-                <span style={{ 
-                  background: '#ef4444', 
-                  color: 'white', 
-                  padding: '4px 8px', 
-                  borderRadius: '4px', 
-                  fontSize: '12px',
-                  fontWeight: '600'
-                }}>
+                <span
+                  style={{
+                    background: "#ef4444",
+                    color: "white",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                  }}
+                >
                   📶 OFFLINE
                 </span>
               )}
               {isOnline && (
-                <span style={{ 
-                  background: '#10b981', 
-                  color: 'white', 
-                  padding: '4px 8px', 
-                  borderRadius: '4px', 
-                  fontSize: '12px',
-                  fontWeight: '600'
-                }}>
+                <span
+                  style={{
+                    background: "#10b981",
+                    color: "white",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                  }}
+                >
                   ✓ ONLINE
                 </span>
               )}
@@ -778,7 +914,7 @@ export default function Timesheet() {
                 type="date"
                 className="timesheet-input"
                 value={timesheetData.date}
-                onChange={(e) => updateTimesheetData('date', e.target.value)}
+                onChange={(e) => updateTimesheetData("date", e.target.value)}
               />
             </div>
             <div className="timesheet-info-card">
@@ -787,7 +923,9 @@ export default function Timesheet() {
                 type="text"
                 className="timesheet-input"
                 value={timesheetData.jobNumber}
-                onChange={(e) => updateTimesheetData('jobNumber', e.target.value)}
+                onChange={(e) =>
+                  updateTimesheetData("jobNumber", e.target.value)
+                }
               />
             </div>
             <div className="timesheet-info-card">
@@ -796,7 +934,9 @@ export default function Timesheet() {
                 type="text"
                 className="timesheet-input"
                 value={timesheetData.woNumber}
-                onChange={(e) => updateTimesheetData('woNumber', e.target.value)}
+                onChange={(e) =>
+                  updateTimesheetData("woNumber", e.target.value)
+                }
               />
             </div>
             <div className="timesheet-info-card">
@@ -805,7 +945,9 @@ export default function Timesheet() {
                 type="text"
                 className="timesheet-input"
                 value={timesheetData.coNumber}
-                onChange={(e) => updateTimesheetData('coNumber', e.target.value)}
+                onChange={(e) =>
+                  updateTimesheetData("coNumber", e.target.value)
+                }
               />
             </div>
           </div>
@@ -814,7 +956,9 @@ export default function Timesheet() {
         <div className="timesheet-content">
           {/* Client & Location Information */}
           <div className="timesheet-section">
-            <div className="timesheet-section-title">Client & Location Information</div>
+            <div className="timesheet-section-title">
+              Client & Location Information
+            </div>
             <div className="timesheet-form-grid">
               <div className="timesheet-form-group">
                 <label className="timesheet-label">Client:</label>
@@ -822,7 +966,9 @@ export default function Timesheet() {
                   type="text"
                   className="timesheet-input"
                   value={timesheetData.client}
-                  onChange={(e) => updateTimesheetData('client', e.target.value)}
+                  onChange={(e) =>
+                    updateTimesheetData("client", e.target.value)
+                  }
                 />
               </div>
               <div className="timesheet-form-group">
@@ -830,7 +976,9 @@ export default function Timesheet() {
                 <textarea
                   className="timesheet-textarea"
                   value={timesheetData.billingAddress}
-                  onChange={(e) => updateTimesheetData('billingAddress', e.target.value)}
+                  onChange={(e) =>
+                    updateTimesheetData("billingAddress", e.target.value)
+                  }
                 />
               </div>
               <div className="timesheet-form-group">
@@ -838,7 +986,9 @@ export default function Timesheet() {
                 <textarea
                   className="timesheet-textarea"
                   value={timesheetData.location}
-                  onChange={(e) => updateTimesheetData('location', e.target.value)}
+                  onChange={(e) =>
+                    updateTimesheetData("location", e.target.value)
+                  }
                 />
               </div>
               <div className="timesheet-form-group">
@@ -847,7 +997,9 @@ export default function Timesheet() {
                   type="text"
                   className="timesheet-input"
                   value={timesheetData.contact}
-                  onChange={(e) => updateTimesheetData('contact', e.target.value)}
+                  onChange={(e) =>
+                    updateTimesheetData("contact", e.target.value)
+                  }
                 />
               </div>
               <div className="timesheet-form-group">
@@ -856,7 +1008,9 @@ export default function Timesheet() {
                   type="tel"
                   className="timesheet-input"
                   value={timesheetData.contactPhone}
-                  onChange={(e) => updateTimesheetData('contactPhone', e.target.value)}
+                  onChange={(e) =>
+                    updateTimesheetData("contactPhone", e.target.value)
+                  }
                 />
               </div>
               <div className="timesheet-form-group">
@@ -865,7 +1019,9 @@ export default function Timesheet() {
                   type="text"
                   className="timesheet-input"
                   value={timesheetData.jobDescription}
-                  onChange={(e) => updateTimesheetData('jobDescription', e.target.value)}
+                  onChange={(e) =>
+                    updateTimesheetData("jobDescription", e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -874,7 +1030,7 @@ export default function Timesheet() {
           {/* Time Tracking */}
           <div className="timesheet-section">
             <div className="timesheet-section-title">Time Tracking</div>
-            
+
             {/* Header Row */}
             <div className="timesheet-time-grid">
               <div className="timesheet-time-header">Technician</div>
@@ -896,35 +1052,53 @@ export default function Timesheet() {
                     type="text"
                     placeholder="Technician Name"
                     value={tech.name}
-                    onChange={(e) => updateTechnicianName(tech.id, e.target.value)}
-                    style={{ border: 'none', background: 'transparent', fontWeight: '600', color: 'var(--timesheet-primary)', width: '100%' }}
+                    onChange={(e) =>
+                      updateTechnicianName(tech.id, e.target.value)
+                    }
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      fontWeight: "600",
+                      color: "var(--timesheet-primary)",
+                      width: "100%",
+                    }}
                   />
                   {technicians.length > 1 && (
                     <button
                       onClick={() => removeTechnician(tech.id)}
                       className="timesheet-remove-btn"
-                      style={{ marginTop: '5px' }}
+                      style={{ marginTop: "5px" }}
                     >
                       Remove
                     </button>
                   )}
                 </div>
-                {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((day) => (
+                {(
+                  ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const
+                ).map((day) => (
                   <input
                     key={day}
                     type="number"
                     step="0.5"
                     min="0"
                     className="timesheet-time-input"
-                    value={tech.hours[day] || ''}
-                    onChange={(e) => updateTechnicianHours(tech.id, day, parseFloat(e.target.value) || 0)}
+                    value={tech.hours[day] || ""}
+                    onChange={(e) =>
+                      updateTechnicianHours(
+                        tech.id,
+                        day,
+                        parseFloat(e.target.value) || 0,
+                      )
+                    }
                   />
                 ))}
-                <div className="timesheet-total-cell">{tech.total.toFixed(1)}</div>
+                <div className="timesheet-total-cell">
+                  {tech.total.toFixed(1)}
+                </div>
               </div>
             ))}
-            
-            <div style={{ marginTop: '15px', textAlign: 'center' }}>
+
+            <div style={{ marginTop: "15px", textAlign: "center" }}>
               <button className="timesheet-add-btn" onClick={addTechnician}>
                 + Add Technician
               </button>
@@ -932,54 +1106,128 @@ export default function Timesheet() {
 
             {/* Travel Time Section */}
             <div className="timesheet-travel-section">
-              <h4 style={{ marginBottom: '15px', color: '#92400e' }}>Travel Time</h4>
-              
+              <h4 style={{ marginBottom: "15px", color: "#92400e" }}>
+                Travel Time
+              </h4>
+
               {/* Travel Header Row */}
               <div className="timesheet-time-grid">
-                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Technician</div>
-                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Mon</div>
-                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Tue</div>
-                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Wed</div>
-                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Thu</div>
-                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Fri</div>
-                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Sat</div>
-                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Sun</div>
-                <div className="timesheet-time-header" style={{ color: '#92400e' }}>Total</div>
+                <div
+                  className="timesheet-time-header"
+                  style={{ color: "#92400e" }}
+                >
+                  Technician
+                </div>
+                <div
+                  className="timesheet-time-header"
+                  style={{ color: "#92400e" }}
+                >
+                  Mon
+                </div>
+                <div
+                  className="timesheet-time-header"
+                  style={{ color: "#92400e" }}
+                >
+                  Tue
+                </div>
+                <div
+                  className="timesheet-time-header"
+                  style={{ color: "#92400e" }}
+                >
+                  Wed
+                </div>
+                <div
+                  className="timesheet-time-header"
+                  style={{ color: "#92400e" }}
+                >
+                  Thu
+                </div>
+                <div
+                  className="timesheet-time-header"
+                  style={{ color: "#92400e" }}
+                >
+                  Fri
+                </div>
+                <div
+                  className="timesheet-time-header"
+                  style={{ color: "#92400e" }}
+                >
+                  Sat
+                </div>
+                <div
+                  className="timesheet-time-header"
+                  style={{ color: "#92400e" }}
+                >
+                  Sun
+                </div>
+                <div
+                  className="timesheet-time-header"
+                  style={{ color: "#92400e" }}
+                >
+                  Total
+                </div>
               </div>
 
               {/* Travel Time Rows - one for each technician */}
               {technicians.map((tech) => (
                 <div key={`travel-${tech.id}`} className="timesheet-time-grid">
-                  <div className="timesheet-tech-name" style={{ color: '#92400e', fontWeight: '600' }}>
-                    {tech.name || 'Unnamed'} (Travel)
+                  <div
+                    className="timesheet-tech-name"
+                    style={{ color: "#92400e", fontWeight: "600" }}
+                  >
+                    {tech.name || "Unnamed"} (Travel)
                   </div>
-                  {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map((day) => (
+                  {(
+                    ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const
+                  ).map((day) => (
                     <input
                       key={day}
                       type="number"
                       step="0.5"
                       min="0"
                       className="timesheet-time-input"
-                      style={{ borderColor: '#92400e' }}
-                      value={tech.travelHours[day] || ''}
-                      onChange={(e) => updateTechnicianTravelHours(tech.id, day, parseFloat(e.target.value) || 0)}
+                      style={{ borderColor: "#92400e" }}
+                      value={tech.travelHours[day] || ""}
+                      onChange={(e) =>
+                        updateTechnicianTravelHours(
+                          tech.id,
+                          day,
+                          parseFloat(e.target.value) || 0,
+                        )
+                      }
                     />
                   ))}
-                  <div className="timesheet-total-cell" style={{ color: '#92400e' }}>
+                  <div
+                    className="timesheet-total-cell"
+                    style={{ color: "#92400e" }}
+                  >
                     {tech.travelTotal.toFixed(1)}
                   </div>
                 </div>
               ))}
-              
-              <div style={{ marginTop: '10px', textAlign: 'right', fontWeight: '600', color: '#92400e' }}>
-                Total Travel: {technicians.reduce((sum, tech) => sum + tech.travelTotal, 0).toFixed(1)} hours
+
+              <div
+                style={{
+                  marginTop: "10px",
+                  textAlign: "right",
+                  fontWeight: "600",
+                  color: "#92400e",
+                }}
+              >
+                Total Travel:{" "}
+                {technicians
+                  .reduce((sum, tech) => sum + tech.travelTotal, 0)
+                  .toFixed(1)}{" "}
+                hours
               </div>
             </div>
           </div>
 
           {/* Job Details */}
           <div className="timesheet-section">
-            <div className="timesheet-section-title">Job Details & Equipment</div>
+            <div className="timesheet-section-title">
+              Job Details & Equipment
+            </div>
             <div className="timesheet-job-details">
               <table className="timesheet-job-table">
                 <thead>
@@ -998,7 +1246,11 @@ export default function Timesheet() {
                       <td>
                         <input
                           type="date"
-                          style={{ width: '100%', border: 'none', padding: '5px' }}
+                          style={{
+                            width: "100%",
+                            border: "none",
+                            padding: "5px",
+                          }}
                         />
                       </td>
                       <td>
@@ -1006,8 +1258,14 @@ export default function Timesheet() {
                           type="text"
                           placeholder="ID#"
                           value={job.equipment}
-                          onChange={(e) => updateJobDetail(job.id, 'equipment', e.target.value)}
-                          style={{ width: '100%', border: 'none', padding: '5px' }}
+                          onChange={(e) =>
+                            updateJobDetail(job.id, "equipment", e.target.value)
+                          }
+                          style={{
+                            width: "100%",
+                            border: "none",
+                            padding: "5px",
+                          }}
                         />
                       </td>
                       <td>
@@ -1015,8 +1273,18 @@ export default function Timesheet() {
                           type="text"
                           placeholder="Equipment description"
                           value={job.workDescription}
-                          onChange={(e) => updateJobDetail(job.id, 'workDescription', e.target.value)}
-                          style={{ width: '100%', border: 'none', padding: '5px' }}
+                          onChange={(e) =>
+                            updateJobDetail(
+                              job.id,
+                              "workDescription",
+                              e.target.value,
+                            )
+                          }
+                          style={{
+                            width: "100%",
+                            border: "none",
+                            padding: "5px",
+                          }}
                         />
                       </td>
                       <td>
@@ -1024,17 +1292,33 @@ export default function Timesheet() {
                           type="text"
                           placeholder="Size"
                           value={job.materials}
-                          onChange={(e) => updateJobDetail(job.id, 'materials', e.target.value)}
-                          style={{ width: '100%', border: 'none', padding: '5px' }}
+                          onChange={(e) =>
+                            updateJobDetail(job.id, "materials", e.target.value)
+                          }
+                          style={{
+                            width: "100%",
+                            border: "none",
+                            padding: "5px",
+                          }}
                         />
                       </td>
                       <td>
                         <input
                           type="number"
                           placeholder="Qty"
-                          value={job.quantity || ''}
-                          onChange={(e) => updateJobDetail(job.id, 'quantity', parseInt(e.target.value) || 0)}
-                          style={{ width: '100%', border: 'none', padding: '5px' }}
+                          value={job.quantity || ""}
+                          onChange={(e) =>
+                            updateJobDetail(
+                              job.id,
+                              "quantity",
+                              parseInt(e.target.value) || 0,
+                            )
+                          }
+                          style={{
+                            width: "100%",
+                            border: "none",
+                            padding: "5px",
+                          }}
                         />
                       </td>
                       <td>
@@ -1052,17 +1336,17 @@ export default function Timesheet() {
               <button className="timesheet-add-btn" onClick={addJobDetail}>
                 + Add Equipment Entry
               </button>
-              <button 
-                className="timesheet-add-btn" 
+              <button
+                className="timesheet-add-btn"
                 onClick={saveCopy}
-                style={{ background: '#059669', marginLeft: '10px' }}
+                style={{ background: "#059669", marginLeft: "10px" }}
               >
                 💾 Save Copy
               </button>
-              <button 
-                className="timesheet-add-btn" 
+              <button
+                className="timesheet-add-btn"
                 onClick={exportToPDF}
-                style={{ background: '#3b82f6', marginLeft: '10px' }}
+                style={{ background: "#3b82f6", marginLeft: "10px" }}
               >
                 📄 Export PDF
               </button>
@@ -1077,7 +1361,7 @@ export default function Timesheet() {
                 className="timesheet-textarea"
                 placeholder="Enter any additional notes, comments, or special instructions..."
                 value={timesheetData.notes}
-                onChange={(e) => updateTimesheetData('notes', e.target.value)}
+                onChange={(e) => updateTimesheetData("notes", e.target.value)}
               />
             </div>
           </div>
@@ -1102,32 +1386,54 @@ export default function Timesheet() {
           <div className="timesheet-signature-section">
             <div className="timesheet-signature-box">
               <h4>Technician Signature</h4>
-              <div style={{ margin: '20px 0' }}>
-                <input type="text" placeholder="Print Name" className="timesheet-input" style={{ marginBottom: '10px' }} />
+              <div style={{ margin: "20px 0" }}>
+                <input
+                  type="text"
+                  placeholder="Print Name"
+                  className="timesheet-input"
+                  style={{ marginBottom: "10px" }}
+                />
                 <input type="date" className="timesheet-input" />
               </div>
             </div>
             <div className="timesheet-signature-box">
               <h4>Client Representative</h4>
-              <div style={{ margin: '20px 0' }}>
-                <input type="text" placeholder="Print Name" className="timesheet-input" style={{ marginBottom: '10px' }} />
+              <div style={{ margin: "20px 0" }}>
+                <input
+                  type="text"
+                  placeholder="Print Name"
+                  className="timesheet-input"
+                  style={{ marginBottom: "10px" }}
+                />
                 <input type="date" className="timesheet-input" />
               </div>
             </div>
             <div className="timesheet-signature-box">
               <h4>Management Review</h4>
-              <div style={{ margin: '20px 0' }}>
-                <input type="text" placeholder="Print Name" className="timesheet-input" style={{ marginBottom: '10px' }} />
+              <div style={{ margin: "20px 0" }}>
+                <input
+                  type="text"
+                  placeholder="Print Name"
+                  className="timesheet-input"
+                  style={{ marginBottom: "10px" }}
+                />
                 <input type="date" className="timesheet-input" />
               </div>
             </div>
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: '30px', paddingTop: '20px', borderTop: '2px solid #e5e7eb' }}>
-            <button 
-              className="timesheet-add-btn" 
+          <div
+            style={{
+              textAlign: "center",
+              marginTop: "30px",
+              paddingTop: "20px",
+              borderTop: "2px solid #e5e7eb",
+            }}
+          >
+            <button
+              className="timesheet-add-btn"
               onClick={clearForm}
-              style={{ background: '#ef4444', color: 'white' }}
+              style={{ background: "#ef4444", color: "white" }}
             >
               🗑️ Clear Form & Start New
             </button>
