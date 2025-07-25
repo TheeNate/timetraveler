@@ -703,10 +703,10 @@ export default function Timesheet() {
       yPosition += 5;
 
       // Add border line between workers (except after the last one)
-      if (techIndex < technicians.length - 1) {
+       
         doc.setDrawColor(200, 200, 200); // Light gray color
         doc.line(margin, yPosition - 8, pageWidth - margin, yPosition - 8);
-      }
+      
     });
 
     // Travel time
