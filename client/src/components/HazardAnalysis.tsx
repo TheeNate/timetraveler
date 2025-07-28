@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import jsPDF from 'jspdf';
 
 interface HazardAnalysisData {
   // Rope Access Methods
@@ -146,7 +147,243 @@ export default function HazardAnalysis() {
   };
 
   const exportToPDF = () => {
-    window.print();
+    const pdf = new jsPDF();
+    const pageWidth = pdf.internal.pageSize.width;
+    const pageHeight = pdf.internal.pageSize.height;
+    const margin = 20;
+    const lineHeight = 6;
+    let currentY = margin;
+
+    // Helper function to add text with automatic line wrapping
+    const addText = (text: string, x: number, y: number, maxWidth: number, fontSize: number = 10) => {
+      pdf.setFontSize(fontSize);
+      const lines = pdf.splitTextToSize(text, maxWidth);
+      pdf.text(lines, x, y);
+      return y + (lines.length * lineHeight);
+    };
+
+    // Helper function to get checkbox symbol
+    const getCheckbox = (checked: boolean) => checked ? '☑' : '☐';
+
+    // Header
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    currentY = addText('LeNDT - Rope Access Hazard Analysis', margin, currentY, pageWidth - 2 * margin, 16);
+    currentY += 10;
+
+    // ROPE ACCESS Section
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    currentY = addText('ROPE ACCESS', margin, currentY, pageWidth - 2 * margin, 12);
+    currentY += 5;
+
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+
+    // Rope Access items
+    const ropeAccessItems = [
+      {
+        checkbox: formData.appropriateEquipment,
+        method: 'Appropriate equipment',
+        item: 'Fall arrest/Restraint/Protection',
+        comment: formData.fallArrestComments
+      },
+      {
+        checkbox: formData.ropeTransfers,
+        method: 'Rope transfers',
+        item: 'Horizontal lines',
+        comment: formData.horizontalLinesComments
+      },
+      {
+        checkbox: formData.deviationReAnchor,
+        method: 'Deviation/Re-Anchor/Passing-Knots',
+        item: 'Lead Climbing (specific access plan required)',
+        comment: formData.leadClimbingComments
+      },
+      {
+        checkbox: formData.walkingAidClimbing,
+        method: 'Walking Aid Climbing / Pipe Rack',
+        item: 'Alternate access method',
+        comment: formData.alternateAccessComments
+      },
+      {
+        checkbox: formData.suspendedAidClimbing,
+        method: 'Suspended Aid Climbing',
+        item: '',
+        comment: ''
+      }
+    ];
+
+    ropeAccessItems.forEach(item => {
+      const commentText = item.comment || 'N/A';
+      const text = `${getCheckbox(item.checkbox)} ${item.method} | ${item.item}: ${commentText}`;
+      currentY = addText(text, margin, currentY, pageWidth - 2 * margin);
+      currentY += 2;
+    });
+
+    currentY += 10;
+
+    // RIGGING Section
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    currentY = addText('RIGGING', margin, currentY, pageWidth - 2 * margin, 12);
+    currentY += 5;
+
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+
+    const riggingItems = [
+      { label: 'Rigging Plan', value: formData.riggingPlan },
+      { label: 'Anchorage Type', value: formData.anchorageType },
+      { label: 'Anchorage 5000lbs', value: formData.anchorage5000lbs },
+      { label: 'Anchor System', value: formData.anchorSystem },
+      { label: 'Deviation/Re-Anchor', value: formData.deviationReAnchorRigging },
+      { label: 'Stopper Knots', value: formData.stopperKnots },
+      { label: 'Sentry Required', value: formData.sentryRequired },
+      { label: 'Rope Hazards', value: formData.ropeHazards }
+    ];
+
+    riggingItems.forEach(item => {
+      const value = item.value || 'N/A';
+      const text = `• ${item.label}: ${value}`;
+      currentY = addText(text, margin, currentY, pageWidth - 2 * margin);
+      currentY += 2;
+    });
+
+    currentY += 10;
+
+    // Hazard Management Section
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    currentY = addText('HAZARD MANAGEMENT', margin, currentY, pageWidth - 2 * margin, 12);
+    currentY += 5;
+
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+
+    // Removal options
+    currentY = addText('Remove Hazard:', margin, currentY, pageWidth - 2 * margin);
+    currentY += 2;
+    const removalItems = [
+      { checkbox: formData.deEnergize, label: 'De-energize' },
+      { checkbox: formData.reSchedule, label: 'Re-schedule' },
+      { checkbox: formData.otherRemoval, label: `Other: ${formData.otherRemovalDetails || 'N/A'}` }
+    ];
+
+    removalItems.forEach(item => {
+      currentY = addText(`  ${getCheckbox(item.checkbox)} ${item.label}`, margin, currentY, pageWidth - 2 * margin);
+      currentY += 2;
+    });
+
+    currentY += 5;
+
+    // Avoid hazard options
+    currentY = addText('Avoid Hazard:', margin, currentY, pageWidth - 2 * margin);
+    currentY += 2;
+    const avoidItems = [
+      { checkbox: formData.barrier, label: 'Barrier' },
+      { checkbox: formData.reAnchor, label: 'Re-anchor' },
+      { checkbox: formData.deviation, label: 'Deviation' },
+      { checkbox: formData.yAnchor, label: 'Y-Anchor' },
+      { checkbox: formData.otherAvoid, label: `Other: ${formData.otherAvoidDetails || 'N/A'}` }
+    ];
+
+    avoidItems.forEach(item => {
+      currentY = addText(`  ${getCheckbox(item.checkbox)} ${item.label}`, margin, currentY, pageWidth - 2 * margin);
+      currentY += 2;
+    });
+
+    currentY += 5;
+
+    // Protection options
+    currentY = addText('Rope Hazard Protection:', margin, currentY, pageWidth - 2 * margin);
+    currentY += 2;
+    const protectionItems = [
+      { checkbox: formData.iceTray, label: 'Ice Tray' },
+      { checkbox: formData.throughGrate, label: 'Through Grate' },
+      { checkbox: formData.engineered, label: 'Engineered' },
+      { checkbox: formData.fabric, label: 'Fabric' },
+      { checkbox: formData.roller, label: 'Roller' },
+      { checkbox: formData.otherProtection, label: `Other: ${formData.otherProtectionDetails || 'N/A'}` }
+    ];
+
+    protectionItems.forEach(item => {
+      currentY = addText(`  ${getCheckbox(item.checkbox)} ${item.label}`, margin, currentY, pageWidth - 2 * margin);
+      currentY += 2;
+    });
+
+    currentY += 5;
+
+    // Equipment drop-proof
+    currentY = addText('Equipment Drop-proof:', margin, currentY, pageWidth - 2 * margin);
+    currentY += 2;
+    const dropProofItems = [
+      { checkbox: formData.lanyard, label: 'Lanyard' },
+      { checkbox: formData.separateRope, label: 'Separate Rope' },
+      { checkbox: formData.bagged, label: 'Bagged' },
+      { checkbox: formData.otherDropProof, label: `Other: ${formData.otherDropProofDetails || 'N/A'}` }
+    ];
+
+    dropProofItems.forEach(item => {
+      currentY = addText(`  ${getCheckbox(item.checkbox)} ${item.label}`, margin, currentY, pageWidth - 2 * margin);
+      currentY += 2;
+    });
+
+    currentY += 10;
+
+    // Check if we need a new page
+    if (currentY > pageHeight - 40) {
+      pdf.addPage();
+      currentY = margin;
+    }
+
+    // ROPE ACCESS RIGGING & RESCUE Section
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    currentY = addText('ROPE ACCESS RIGGING & RESCUE', margin, currentY, pageWidth - 2 * margin, 12);
+    currentY += 5;
+
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+
+    const rescueItems = [
+      { label: 'Personnel/Equipment', value: formData.personnelEquipment },
+      { label: 'Communication - Verbal', checkbox: formData.verbal },
+      { label: 'Communication - Radio', checkbox: formData.radio },
+      { label: 'Communication - Hand Signal', checkbox: formData.handSignal },
+      { label: 'Communication Comments', value: formData.commentsComm },
+      { label: 'Designated Safe Zone', value: formData.designatedSafeZone },
+      { label: 'Safe Zone Comments', value: formData.designatedSafeZoneComments },
+      { label: 'Simple Intervention', value: formData.simpleIntervention },
+      { label: 'Simple Intervention Comments', value: formData.simpleInterventionComments },
+      { label: 'Remote Rescue Complex', value: formData.remoteRescueComplex },
+      { label: 'Remote Rescue Comments', value: formData.remoteRescueComplexComments },
+      { label: 'Complex Intervention', value: formData.complexIntervention },
+      { label: 'Complex Intervention Comments', value: formData.complexInterventionComments },
+      { label: 'Rescue Plan', value: formData.rescuePlan }
+    ];
+
+    rescueItems.forEach(item => {
+      if ('checkbox' in item && item.checkbox !== undefined) {
+        const text = `${getCheckbox(item.checkbox)} ${item.label}`;
+        currentY = addText(text, margin, currentY, pageWidth - 2 * margin);
+      } else if ('value' in item) {
+        const value = item.value || 'N/A';
+        const text = `• ${item.label}: ${value}`;
+        currentY = addText(text, margin, currentY, pageWidth - 2 * margin);
+      }
+      currentY += 2;
+    });
+
+    // Add timestamp
+    currentY += 10;
+    const timestamp = new Date().toLocaleString();
+    pdf.setFontSize(8);
+    currentY = addText(`Generated: ${timestamp}`, margin, currentY, pageWidth - 2 * margin, 8);
+
+    // Save the PDF
+    const filename = `Hazard_Analysis_${new Date().toISOString().slice(0, 10)}.pdf`;
+    pdf.save(filename);
   };
 
   const clearForm = () => {
